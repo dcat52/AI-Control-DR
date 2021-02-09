@@ -22,7 +22,7 @@ class Environment:
         self.physics_steps_per_frame = 1
 
         self.space = pymunk.Space()
-        self.friction_scalar = 0.90
+        self.friction_scalar = 0.80
 
         self.action_freq = 3 # in Hz
 
