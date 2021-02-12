@@ -1,33 +1,29 @@
 # RL Model for agent control
 
 from tensorflow.python.keras import Sequential
-from baselines.common.atari_wrappers import make_atari, wrap_deepmind
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
 from keras.layers import Conv2D, Flatten, Dense, Input
 import tensorflow as tf
+import simulator.Environment as environment
 
 class RL_Model():
 
     def __init__(self):
         # Configuration paramaters for the whole setup
-        self.seed = 42
         self.gamma = 0.99  # Discount factor for past rewards
         self.epsilon = 1.0  # Epsilon greedy parameter
         self.epsilon_min = 0.1  # Minimum epsilon greedy parameter
         self.epsilon_max = 1.0  # Maximum epsilon greedy parameter
-        self.epsilon_interval = (
-                self.epsilon_max - self.epsilon_min
-        )  # Rate at which to reduce chance of random action being taken
+        self.epsilon_interval = (self.epsilon_max - self.epsilon_min)  # Rate at which to reduce chance of random action being taken
         self.batch_size = 32  # Size of batch taken from replay buffer
         self.max_steps_per_episode = 10000
 
-        # Use the Baseline Atari environment because of Deepmind helper functions
-        self.env = make_atari("BreakoutNoFrameskip-v4")
-        # Warp the frames, grey scale, stake four frame and scale to smaller ratio
-        self.env = wrap_deepmind(self.env, frame_stack=True, scale=True)
-        self.env.seed(self.seed)
+        # initialize the environment
+        self.env = environment.Environment()
+        full_env = self.env.step([0, 0])
+        self.state = full_env[0:1]
 
         # dimension of output
         self.num_actions = 2
@@ -40,23 +36,26 @@ class RL_Model():
           # Invalid device or cannot modify virtual devices once initialized.
           pass
 
+    def step(self, action):
+        full_env = self.env.step(action)
+        current_position = full_env[0:1]
+        return current_position
+
     def create_q_model(self):
         # Breakout setup
-        inputs = Input(shape=(84, 84, 4,))
-        layer1 = Conv2D(32, 8, strides=4, activation="relu")(inputs)
-        layer2 = Conv2D(64, 4, strides=2, activation="relu")(layer1)
-        layer3 = Conv2D(64, 3, strides=1, activation="relu")(layer2)
-        layer4 = Flatten()(layer3)
-        layer_out = Dense(512, activation="relu")(layer4)
+        # inputs = Input(shape=(84, 84, 4,))
+        # layer1 = Conv2D(32, 8, strides=4, activation="relu")(inputs)
+        # layer2 = Conv2D(64, 4, strides=2, activation="relu")(layer1)
+        # layer3 = Conv2D(64, 3, strides=1, activation="relu")(layer2)
+        # layer4 = Flatten()(layer3)
+        # layer_out = Dense(512, activation="relu")(layer4)
 
-
-        # inputs = Input(shape=(2,))
-        # layer1 = Dense(256, activation="relu")(inputs)
-        # layer_out = Dense(256, activation="relu")(layer1)
+        inputs = Input(shape=(2,))
+        layer1 = Dense(256, activation="relu")(inputs)
+        layer_out = Dense(256, activation="relu")(layer1)
 
         action = Dense(self.num_actions, activation="linear")(layer_out)
         return keras.Model(inputs=inputs, outputs=action)
-
 
     def train_model(self):
         # The first model makes the predictions for Q-values which are used to
@@ -97,8 +96,7 @@ class RL_Model():
             episode_reward = 0
 
             for timestep in range(1, self.max_steps_per_episode):
-                self.env.render()  # Adding this line would show the attempts
-                # of the agent in a pop up window.
+                # self.env._render()
                 frame_count += 1
 
                 # Use epsilon-greedy for exploration
@@ -110,9 +108,7 @@ class RL_Model():
                     # From environment state
                     state_tensor = tf.convert_to_tensor(state)
                     state_tensor = tf.expand_dims(state_tensor, 0)
-                    action_probs = model(state_tensor, training=False)
-                    # Take best action
-                    action = tf.argmax(action_probs[0]).numpy()
+                    action = model(state_tensor, training=False)
 
                 # Decay probability of taking random action
                 self.epsilon -= self.epsilon_interval / epsilon_greedy_frames

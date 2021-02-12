@@ -54,8 +54,7 @@ class Environment:
         self.__init__(self.robot_start, self.render_env)
 
     def step(self, action) -> None:
-        self._process_keyboard()
-
+    # TODO: establish reward, return reward and some other thigns
         # result = self._make_action(action)
         self.agent.set_motors(action)
 
