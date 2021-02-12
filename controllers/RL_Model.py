@@ -41,16 +41,18 @@ class RL_Model():
           pass
 
     def create_q_model(self):
-        inputs = Input(shape=(2,))
+        # Breakout setup
+        inputs = Input(shape=(84, 84, 4,))
+        layer1 = Conv2D(32, 8, strides=4, activation="relu")(inputs)
+        layer2 = Conv2D(64, 4, strides=2, activation="relu")(layer1)
+        layer3 = Conv2D(64, 3, strides=1, activation="relu")(layer2)
+        layer4 = Flatten()(layer3)
+        layer_out = Dense(512, activation="relu")(layer4)
 
-        # layer1 = Conv2D(32, 8, strides=4, activation="relu")(inputs)
-        # layer2 = Conv2D(64, 4, strides=2, activation="relu")(layer1)
-        # layer3 = Conv2D(64, 3, strides=1, activation="relu")(layer2)
-        # layer4 = Flatten()(layer3)
-        # layer_out = Dense(512, activation="relu")(layer4)
 
-        layer1 = Dense(256, activation="relu")(inputs)
-        layer_out = Dense(256, activation="relu")(layer1)
+        # inputs = Input(shape=(2,))
+        # layer1 = Dense(256, activation="relu")(inputs)
+        # layer_out = Dense(256, activation="relu")(layer1)
 
         action = Dense(self.num_actions, activation="linear")(layer_out)
         return keras.Model(inputs=inputs, outputs=action)
@@ -100,7 +102,7 @@ class RL_Model():
                 frame_count += 1
 
                 # Use epsilon-greedy for exploration
-                if frame_count < epsilon_random_frames or epsilon > np.random.rand(1)[0]:
+                if frame_count < epsilon_random_frames or self.epsilon > np.random.rand(1)[0]:
                     # Take random action
                     action = np.random.choice(self.num_actions)
                 else:
@@ -113,8 +115,8 @@ class RL_Model():
                     action = tf.argmax(action_probs[0]).numpy()
 
                 # Decay probability of taking random action
-                epsilon -= self.epsilon_interval / epsilon_greedy_frames
-                epsilon = max(epsilon, self.epsilon_min)
+                self.epsilon -= self.epsilon_interval / epsilon_greedy_frames
+                self.epsilon = max(self.epsilon, self.epsilon_min)
 
                 # Apply the sampled action in our environment
                 state_next, reward, done, _ = self.env.step(action)
@@ -201,3 +203,9 @@ class RL_Model():
             if running_reward > 40:  # Condition to consider the task solved
                 print("Solved at episode {}!".format(episode_count))
                 return model
+
+
+# tests
+rl = RL_Model()
+rl.gpu_mem_config()
+rl.train_model()
