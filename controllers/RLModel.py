@@ -57,9 +57,10 @@ class RLModel:
         inputs = Input(shape=(2,))
         layer1 = Dense(256, activation="relu")(inputs)
         layer_out = Dense(256, activation="relu")(layer1)
+        actions = Dense(2, activation="relu")(layer_out)
 
-        action = Dense(self.num_actions, activation="linear")(layer_out)
-        return keras.Model(inputs=inputs, outputs=action)
+        # action = Dense(self.num_actions, activation="linear")(layer_out)
+        return keras.Model(inputs=inputs, outputs=actions)
 
     def train_model(self):
         # The first model makes the predictions for Q-values which are used to

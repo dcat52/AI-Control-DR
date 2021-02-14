@@ -76,7 +76,7 @@ class Environment:
         if self.render_env:
             self._render()
 
-        result = self._get_agent_state()
+        state_prime = self._get_agent_state()
         agent_pos = self.agent.get_pos()
         reward = self.reward_model.calculate_reward(agent_pos)
 
@@ -87,7 +87,7 @@ class Environment:
             done = True
 
         # (state, reward, done, None)
-        return result, reward, done, None
+        return state_prime[:2], reward, done, None
 
     # def _make_action(self, action) -> tuple:
     #     self.agent.apply_velocities(action)
