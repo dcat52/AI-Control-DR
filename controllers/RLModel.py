@@ -108,9 +108,6 @@ class RLModel:
                 if frame_count < epsilon_random_frames or self.epsilon > np.random.rand(1)[0]:
                     # Take random action
                     action = (random.uniform(0.0, 1.0), random.uniform(0.0, 1.0))
-                    print(len(action))
-                    # print(action.shape)
-                    # print(action)
                 else:
                     # Predict action Q-values
                     # From environment state
