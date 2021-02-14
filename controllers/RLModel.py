@@ -6,9 +6,22 @@ import tensorflow as tf
 from tensorflow import keras
 from keras.layers import Conv2D, Flatten, Dense, Input
 import tensorflow as tf
-import simulator.Environment as environment
+import simulator.Environment as Environment
 
-class RL_Model():
+# TODO: check for reward success (=0) and reset the environment when this happens during training
+# TODO: set threshold for training to stop and return the trained model
+# TODO: determine range of values for randomized goal locations self.max_xy_range
+
+def gpu_mem_config():
+    physical_devices = tf.config.list_physical_devices('GPU')
+    try:
+      tf.config.experimental.set_memory_growth(physical_devices[0], True)
+    except:
+      # Invalid device or cannot modify virtual devices once initialized.
+      pass
+
+
+class RLModel:
 
     def __init__(self):
         # Configuration paramaters for the whole setup
@@ -19,26 +32,18 @@ class RL_Model():
         self.epsilon_interval = (self.epsilon_max - self.epsilon_min)  # Rate at which to reduce chance of random action being taken
         self.batch_size = 32  # Size of batch taken from replay buffer
         self.max_steps_per_episode = 10000
+        self.max_xy_range = 100
 
         # initialize the environment
-        self.env = environment.Environment()
+        self.env = Environment.Environment(goal=(0, 0))
         full_env = self.env.step([0, 0])
         self.state = full_env[0:1]
 
         # dimension of output
         self.num_actions = 2
 
-    def gpu_mem_config(self):
-        physical_devices = tf.config.list_physical_devices('GPU')
-        try:
-          tf.config.experimental.set_memory_growth(physical_devices[0], True)
-        except:
-          # Invalid device or cannot modify virtual devices once initialized.
-          pass
-
     def step(self, action):
-        full_env = self.env.step(action)
-        current_position = full_env[0:1]
+        current_position = self.env.step(action)[0:1]
         return current_position
 
     def create_q_model(self):
@@ -94,6 +99,7 @@ class RL_Model():
         while True:  # Run until solved
             state = np.array(self.env.reset())
             episode_reward = 0
+            goals_completed = 0
 
             for timestep in range(1, self.max_steps_per_episode):
                 # self.env._render()
@@ -102,7 +108,7 @@ class RL_Model():
                 # Use epsilon-greedy for exploration
                 if frame_count < epsilon_random_frames or self.epsilon > np.random.rand(1)[0]:
                     # Take random action
-                    action = np.random.choice(self.num_actions)
+                    action = np.random.rand(1)[0]
                 else:
                     # Predict action Q-values
                     # From environment state
@@ -184,10 +190,17 @@ class RL_Model():
                     del action_history[:1]
                     del done_history[:1]
 
+                # if goal is met, generate a new goal
                 if done:
-                    break
+                    print("Met goal! Iteration #: " + str(episode_count))
+                    new_goal = np.random.rand(1)[0] * self.max_xy_range
+                    self.env.set_new_goal(new_goal)
+                    print("New goal: " + str(new_goal))
+                    goals_completed += 1
+                    if goals_completed > 5:
+                        break
 
-            # Update running reward to check condition for solving
+            # Update running reward to compare
             episode_reward_history.append(episode_reward)
             print(episode_reward)
             if len(episode_reward_history) > 100:
@@ -196,12 +209,11 @@ class RL_Model():
 
             episode_count += 1
 
-            if running_reward > 40:  # Condition to consider the task solved
-                print("Solved at episode {}!".format(episode_count))
-                return model
+            # set break condition
+                # return model
 
 
 # tests
-rl = RL_Model()
-rl.gpu_mem_config()
+rl = RLModel()
+gpu_mem_config()
 rl.train_model()
