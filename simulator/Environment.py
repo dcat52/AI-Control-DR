@@ -92,6 +92,10 @@ class Environment:
     # def _make_action(self, action) -> tuple:
     #     self.agent.apply_velocities(action)
 
+    def set_new_goal(self, goal: Vec2d) -> None:
+        self.goal = goal
+        self.reward_model.set_new_goal(goal)
+
     def _agent_dist_to_goal(self):
         pos = self.agent.get_pos()
         dist = pos.get_distance(self.goal)
