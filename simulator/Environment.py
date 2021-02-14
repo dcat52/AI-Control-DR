@@ -47,6 +47,7 @@ class Environment:
         self.space.add(agent_body, agent_shape)
 
         self.reward_model = Reward(goal=goal)
+        self.goal = goal
 
         self.running = True
 
