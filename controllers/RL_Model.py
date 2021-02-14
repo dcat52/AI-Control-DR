@@ -1,11 +1,10 @@
 # RL Model for agent control
-
+import random
 from tensorflow.python.keras import Sequential
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
-from keras.layers import Conv2D, Flatten, Dense, Input
-import tensorflow as tf
+from tensorflow.keras.layers import Conv2D, Flatten, Dense, Input
 import simulator.Environment as environment
 
 class RL_Model():
@@ -102,7 +101,10 @@ class RL_Model():
                 # Use epsilon-greedy for exploration
                 if frame_count < epsilon_random_frames or self.epsilon > np.random.rand(1)[0]:
                     # Take random action
-                    action = np.random.choice(self.num_actions)
+                    action = (random.uniform(0.0, 1.0), random.uniform(0.0, 1.0))
+                    print(len(action))
+                    # print(action.shape)
+                    # print(action)
                 else:
                     # Predict action Q-values
                     # From environment state

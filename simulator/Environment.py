@@ -55,7 +55,7 @@ class Environment:
             self._render()
 
     def reset(self) -> None:
-        self.__init__(self.robot_start, self.render_env)
+        self.__init__(robot_start=self.robot_start, goal=self.goal, render=self.render_env)
 
     def step(self, action) -> None:
     # TODO: establish reward, return reward and some other thigns
