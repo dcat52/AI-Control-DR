@@ -10,10 +10,11 @@ import pymunk.pygame_util
 from pymunk import Vec2d
 
 from simulator.Agent import Agent
+from simulator.Reward import Reward
 
 class Environment:
     
-    def __init__(self, robot_start: Vec2d = (0, 0), render: bool = True) -> None:
+    def __init__(self, robot_start: Vec2d = (0, 0), goal: Vec2d = (2, 2), render: bool = True) -> None:
 
         # Physics
         # Time step
@@ -45,6 +46,8 @@ class Environment:
         agent_shape = self.agent.get_shape()
         self.space.add(agent_body, agent_shape)
 
+        self.reward_model = Reward(goal=goal)
+
         self.running = True
 
         if self.render_env:
@@ -73,11 +76,25 @@ class Environment:
             self._render()
 
         result = self._get_agent_state()
+        agent_pos = self.agent.get_pos()
+        reward = self.reward_model.calculate_reward(agent_pos)
 
-        return result
+        done = False
+
+        dist = self._agent_dist_to_goal()
+        if dist <= 0.05:
+            done = True
+
+        # (state, reward, done, None)
+        return result, reward, done, None
 
     # def _make_action(self, action) -> tuple:
     #     self.agent.apply_velocities(action)
+
+    def _agent_dist_to_goal(self):
+        pos = self.agent.get_pos()
+        dist = pos.get_distance(self.goal)
+        return dist
 
     def _env_info_from_agent(self, agent_body) -> None:
         # TODO: add implementation
