@@ -14,18 +14,13 @@ from simulator.Reward import Reward
 
 class Environment:
     
-    def __init__(self, robot_start: Vec2d = (0, 0), goal: Vec2d = (2, 2), render: bool = True) -> None:
+    def __init__(self, robot_start: Vec2d = (0, 0), goal: Vec2d = (2, 2), goal_threshold: float = 10.0, render: bool = True) -> None:
 
         # Physics
         # Time step
         self.dt = 1.0 / 60.0
         # Number of physics steps per screen frame
         self.physics_steps_per_frame = 1
-        
-        # self.surface = pygame.Surface((600,600))
-        # self.space = pymunk.Space()
-        # options = pymunk.pygame_util.DrawOptions(surface)
-        # space.debug_draw(options)
 
         self.space = pymunk.Space()
         self.friction_scalar = 0.80
@@ -54,16 +49,7 @@ class Environment:
 
         self.reward_model = Reward(goal=goal)
         self.goal = goal
-
-        # ch = space.add_collision_handler(0, 0)
-        # ch.data["surface"] = screen
-        # pymunk.draw(self.space, (0,255,0), self.goal, radius=5)
-        # body = pymunk.Body()
-        # body.position = self.goal
-        # g = pymunk.Circle(self.space.static_body, 10, self.goal)
-        # options = pymunk.SpaceDebugDrawOptions()
-        # self.space.debug_draw(options)
-        # self.space.add(g)
+        self.goal_threshold = goal_threshold
 
         self.running = True
 
@@ -71,7 +57,7 @@ class Environment:
             self._render()
 
     def reset(self) -> None:
-        self.__init__(robot_start=self.robot_start, goal=self.goal, render=self.render_env)
+        self.__init__(robot_start=self.robot_start, goal=self.goal, goal_threshold=self.goal_threshold, render=self.render_env)
         return (self._get_agent_state())
 
     def step(self, action) -> None:
@@ -100,7 +86,8 @@ class Environment:
         done = False
 
         dist = self._agent_dist_to_goal()
-        if dist <= 5:
+        if dist <= self.goal_threshold:
+            reward = self.reward_model.reward_goal
             done = True
 
         # (state, reward, done, None)

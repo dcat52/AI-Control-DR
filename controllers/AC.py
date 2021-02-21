@@ -7,7 +7,7 @@ from simulator.Environment import Environment
 
 # problem = "Pendulum-v0"
 # env = gym.make(problem)
-env = Environment(robot_start=(300, 300), goal=(400, 400))
+env = Environment(robot_start=(300, 300), goal=(400, 400), goal_threshold=20)
 
 num_states = 3
 print("Size of State Space ->  {}".format(num_states))
