@@ -21,6 +21,11 @@ class Environment:
         self.dt = 1.0 / 60.0
         # Number of physics steps per screen frame
         self.physics_steps_per_frame = 1
+        
+        # self.surface = pygame.Surface((600,600))
+        # self.space = pymunk.Space()
+        # options = pymunk.pygame_util.DrawOptions(surface)
+        # space.debug_draw(options)
 
         self.space = pymunk.Space()
         self.friction_scalar = 0.80
@@ -39,6 +44,7 @@ class Environment:
         self.clock = pygame.time.Clock()
 
         self.draw_options = pymunk.pygame_util.DrawOptions(self.screen)
+        self.space.debug_draw(self.draw_options)
 
         # Static barrier walls (lines) that the balls bounce off of
         self._add_static_scenery()
@@ -49,6 +55,16 @@ class Environment:
         self.reward_model = Reward(goal=goal)
         self.goal = goal
 
+        # ch = space.add_collision_handler(0, 0)
+        # ch.data["surface"] = screen
+        # pymunk.draw(self.space, (0,255,0), self.goal, radius=5)
+        # body = pymunk.Body()
+        # body.position = self.goal
+        # g = pymunk.Circle(self.space.static_body, 10, self.goal)
+        # options = pymunk.SpaceDebugDrawOptions()
+        # self.space.debug_draw(options)
+        # self.space.add(g)
+
         self.running = True
 
         if self.render_env:
@@ -56,6 +72,7 @@ class Environment:
 
     def reset(self) -> None:
         self.__init__(robot_start=self.robot_start, goal=self.goal, render=self.render_env)
+        return (self._get_agent_state())
 
     def step(self, action) -> None:
     # TODO: establish reward, return reward and some other thigns
@@ -83,11 +100,11 @@ class Environment:
         done = False
 
         dist = self._agent_dist_to_goal()
-        if dist <= 0.05:
+        if dist <= 5:
             done = True
 
         # (state, reward, done, None)
-        return state_prime[:2], reward, done, None
+        return state_prime, reward, done, None
 
     # def _make_action(self, action) -> tuple:
     #     self.agent.apply_velocities(action)
@@ -157,6 +174,7 @@ class Environment:
         Draw the objects.
         :return: None
         """
+        pygame.draw.circle(self.screen, (0, 150, 0), center=self.goal, radius=10)
         self.space.debug_draw(self.draw_options)
 
 if __name__ == "__main__":

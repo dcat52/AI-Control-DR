@@ -1,7 +1,7 @@
 from simulator.Environment import Environment
 import pygame
 
-env = Environment()
+env = Environment(robot_start=(300, 300), goal=(400, 400))
 
 class Keyboard_Controller:
     def __init__(self, MODE):
@@ -17,7 +17,8 @@ class Keyboard_Controller:
 
             self.process_keys()
 
-            env.step((self.left, self.right))
+            state = env.step((self.left, self.right))
+            print(state)
             
             self.left = 0
             self.right = 0

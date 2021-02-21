@@ -26,7 +26,7 @@ class Agent:
         
         self.inertia = pymunk.moment_for_circle(self.mass, 0, self.radius, (0, 0))
         self.body = pymunk.Body(self.mass, self.inertia)
-        self.body.position = (300, 300)
+        self.body.position = self.start_pos
         self.shape = pymunk.Circle(self.body, self.radius)
         self.shape.color = THECOLORS['red']
         self.shape.elasticity = .5
@@ -43,9 +43,9 @@ class Agent:
         self.pos_history.put(self.get_pos(), block=False)
 
         observation = self._sense()
-        state = np.append(observation, list(self.pos_history.queue))
+        # state = np.append(observation, list(self.pos_history.queue))
 
-        return state
+        return observation
 
     def set_motors(self, velocities: tuple) -> None:
         self.body.apply_force_at_local_point((20000 * velocities[0], 0), (0, -20))
@@ -54,9 +54,13 @@ class Agent:
     def get_pos(self) -> Vec2d:
         return self.body.position
 
+    def get_angle(self) -> float:
+        return self.body.angle
+
     def _sense(self) -> np.ndarray:
         # obs = self._env._env_info_from_agent(self.body)
         sensors = np.array(self.get_pos())
+        sensors = np.append(sensors, self.get_angle())
         return sensors
 
     def _set_pos(self, new_pos: Vec2d) -> None:
