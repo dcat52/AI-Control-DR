@@ -7,9 +7,9 @@ from simulator.Environment import Environment
 
 # problem = "Pendulum-v0"
 # env = gym.make(problem)
-env = Environment(robot_start=(300, 300), goal=(400, 400), goal_threshold=20)
+env = Environment(robot_start=(300, 300), goal=(400, 400), goal_threshold=20, render=True)
 
-num_states = 3
+num_states = 6
 print("Size of State Space ->  {}".format(num_states))
 # print(env.observation_space)
 num_actions = 2
@@ -184,6 +184,12 @@ def policy(state, noise_object):
 
     return [np.squeeze(legal_action)]
 
+def save_weights(directory: str, i: int):
+    actor_model.save_weights("{}/actor-model_{:3d}".format(directory, i))
+    critic_model.save_weights("{}/critic-model_{:3d}".format(directory, i))
+    target_actor.save_weights("{}/target-actor_{:3d}".format(directory, i))
+    target_critic.save_weights("{}/target-critic_{:3d}".format(directory, i))
+
 std_dev = 0.5
 ou_noise = OUActionNoise(mean=np.zeros(1), std_deviation=float(std_dev) * np.ones(1))
 
@@ -204,7 +210,7 @@ actor_lr = 0.001
 critic_optimizer = tf.keras.optimizers.Adam(critic_lr)
 actor_optimizer = tf.keras.optimizers.Adam(actor_lr)
 
-total_episodes = 100
+total_episodes = 1000
 # Discount factor for future rewards
 gamma = 1
 # Used to update target networks
@@ -240,7 +246,6 @@ for ep in range(total_episodes):
         counter += 1
         if counter == 100:
             done = True
-            reward = -1000
 
         buffer.record((prev_state, action, reward, state))
         episodic_reward += reward
@@ -260,6 +265,9 @@ for ep in range(total_episodes):
     avg_reward = np.mean(ep_reward_list[-40:])
     print("Episode * {} * Avg Reward is ==> {}".format(ep, avg_reward))
     avg_reward_list.append(avg_reward)
+
+    if ep % 25 == 0:
+        save_weights("weights", ep)
 
 # Plotting graph
 # Episodes versus Avg. Rewards
