@@ -22,6 +22,8 @@ class Environment:
         # Number of physics steps per screen frame
         self.physics_steps_per_frame = 1
 
+        self.step_count = 0
+
         self.space = pymunk.Space()
         self.friction_scalar = 0.80
 
@@ -63,20 +65,23 @@ class Environment:
     def step(self, action) -> None:
     # TODO: establish reward, return reward and some other thigns
         # result = self._make_action(action)
+
+        self.step_count += 1
+
         self.agent.set_motors(action)
 
         for x in range(self.physics_steps_per_frame):
             self.space.step(self.dt)
             self._assess_friction()
         
-        if self.render_env:
+        if self.render_env and self.step_count % 5 == 0:
             self._clear_screen()
             self._draw_objects()
             pygame.display.flip()
             self.clock.tick(50)
             pygame.display.set_caption("fps: " + str(self.clock.get_fps()))
 
-        if self.render_env:
+        if self.render_env and self.step_count % 5 == 0:
             self._render()
 
         state_prime = self._get_agent_state()
