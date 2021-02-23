@@ -14,7 +14,7 @@ from simulator.Reward import Reward
 
 class Environment:
     
-    def __init__(self, robot_start: Vec2d = (0, 0), goal: Vec2d = (2, 2), goal_threshold: float = 10.0, render: bool = True) -> None:
+    def __init__(self, robot_start: Vec2d = (0, 0), goal: Vec2d = (2, 2), goal_threshold: float = 10.0, render: bool = True, render_step: int = 5) -> None:
 
         # Physics
         # Time step
@@ -23,6 +23,7 @@ class Environment:
         self.physics_steps_per_frame = 1
 
         self.step_count = 0
+        self.render_step = render_step
 
         self.space = pymunk.Space()
         self.friction_scalar = 0.80
@@ -59,13 +60,14 @@ class Environment:
             self._render()
 
     def reset(self) -> None:
-        self.__init__(robot_start=self.robot_start, goal=self.goal, goal_threshold=self.goal_threshold, render=self.render_env)
+        self.__init__(robot_start=self.robot_start, goal=self.goal, goal_threshold=self.goal_threshold, render=self.render_env, render_step=self.render_step)
         return (self._get_agent_state())
 
     def step(self, action) -> None:
     # TODO: establish reward, return reward and some other thigns
         # result = self._make_action(action)
 
+        self._process_keyboard()
         self.step_count += 1
 
         self.agent.set_motors(action)
@@ -74,14 +76,14 @@ class Environment:
             self.space.step(self.dt)
             self._assess_friction()
         
-        if self.render_env and self.step_count % 5 == 0:
+        if self.render_env and self.step_count % self.render_step == 0:
             self._clear_screen()
             self._draw_objects()
             pygame.display.flip()
             self.clock.tick(50)
             pygame.display.set_caption("fps: " + str(self.clock.get_fps()))
 
-        if self.render_env and self.step_count % 5 == 0:
+        if self.render_env and self.step_count % self.render_step == 0:
             self._render()
 
         state_prime = self._get_agent_state()
@@ -149,6 +151,12 @@ class Environment:
                 self.running = False
             if event.type == pygame.KEYDOWN and event.key == pygame.K_p:
                 pygame.image.save(self.screen, "bouncing_balls.png")
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_COMMA:
+                self.render_step = max(self.render_step-1, 1)
+                print("Render step is {}".format(self.render_step))
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_PERIOD:
+                self.render_step = min(self.render_step+1, 10)
+                print("Render step is {}".format(self.render_step))
 
     def _render(self) -> None:
         self._clear_screen()
