@@ -2,11 +2,9 @@ import random
 from typing import List
 
 import pygame
-from pygame.color import THECOLORS
-
 import pymunk
 import pymunk.pygame_util
-from pymunk import Vec2d
+from pygame.color import THECOLORS
 
 
 class Robot_World():

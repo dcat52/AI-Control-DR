@@ -1,5 +1,6 @@
-from simulator.Environment import Environment
 import pygame
+
+from simulator.Environment import Environment
 
 env = Environment(robot_start=(300, 300), goal=(400, 400))
 

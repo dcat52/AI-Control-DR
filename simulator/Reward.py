@@ -7,6 +7,7 @@ class Reward:
         self.reward_death = -100.0
         self.reward_goal = 100.0
         self.goal = goal
+        self.reward_goal = 100.0
 
     def generate_reward_map(self):
         pass
@@ -15,7 +16,7 @@ class Reward:
         self.goal = goal
 
     def calculate_reward(self, pos: Vec2d):
-        length = pos.get_distance(self.goal)
+        length = pos.get_distance(self.goal)**3
         return -length
 
     def set_new_goal(self, goal: Vec2d) -> None:

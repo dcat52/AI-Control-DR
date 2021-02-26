@@ -1,16 +1,12 @@
-from enum import Enum
 import numpy as np
-import random
-from typing import List
-
 import pygame
-from pygame.color import THECOLORS
 import pymunk
 import pymunk.pygame_util
 from pymunk import Vec2d
 
 from simulator.Agent import Agent
 from simulator.Reward import Reward
+
 
 class Environment:
     

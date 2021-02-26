@@ -1,14 +1,11 @@
-from enum import Enum
-import numpy as np
 from queue import Queue
-import random
-from typing import List
 
-import pygame
-from pygame.color import THECOLORS
+import numpy as np
 import pymunk
 import pymunk.pygame_util
+from pygame.color import THECOLORS
 from pymunk import Vec2d
+
 
 class Agent:
     def __init__(self, _env, mass: float = 10, radius: float = 20, pos_hist_len: int = 5, start_pos: Vec2d = (0, 0)) -> None:
