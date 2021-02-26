@@ -16,7 +16,7 @@ class Reward:
         self.goal = goal
 
     def calculate_reward(self, pos: Vec2d):
-        length = pos.get_distance(self.goal)**3
+        length = pos.get_distance(self.goal)
         return -length
 
     def set_new_goal(self, goal: Vec2d) -> None:
