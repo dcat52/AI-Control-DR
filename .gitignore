@@ -127,3 +127,10 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+# Video files
+*.mkv
+*.mp4
+
+# Model weights
+weights/
