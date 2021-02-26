@@ -73,7 +73,7 @@ class Agent:
 
     def _sense(self) -> np.ndarray:
         # obs = self._env._env_info_from_agent(self.body)
-        sensors = np.array(self.get_pos())
+        sensors = np.array(self.get_pos()) / 200
         sensors = np.append(sensors, self.get_angle())
         return sensors
 

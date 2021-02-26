@@ -5,6 +5,7 @@ class Reward:
 
     def __init__(self, goal: Vec2d = (0, 0)):
         self.reward_death = -100.0
+        self.reward_goal = 100.0
         self.goal = goal
 
     def generate_reward_map(self):
