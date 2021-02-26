@@ -1,11 +1,13 @@
 # RL Model for agent control
 import random
-from tensorflow.python.keras import Sequential
+
 import numpy as np
 import tensorflow as tf
 from tensorflow import keras
-from tensorflow.keras.layers import Conv2D, Flatten, Dense, Input
+from tensorflow.keras.layers import Dense, Input
+
 from simulator.Environment import Environment
+
 
 # TODO: check for reward success (=0) and reset the environment when this happens during training
 # TODO: set threshold for training to stop and return the trained model
@@ -35,8 +37,7 @@ class RLModel:
 
         # initialize the environment
         self.env = Environment(goal=(0, 0))
-        full_env = self.env.step([0, 0])
-        self.state = full_env[0:1]
+        self.state = self.env.step([0, 0])
 
         # dimension of output
         self.num_actions = 2

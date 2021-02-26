@@ -4,7 +4,7 @@ from tensorflow.keras import layers
 import numpy as np
 import matplotlib.pyplot as plt
 from simulator.Environment import Environment
-
+import tensorwatch as tw
 # problem = "Pendulum-v0"
 # env = gym.make(problem)
 env = Environment(robot_start=(300, 300), goal=(400, 400), goal_threshold=20, render=True)
@@ -20,6 +20,13 @@ lower_bound = -1.0
 
 print("Max Value of Action ->  {}".format(upper_bound))
 print("Min Value of Action ->  {}".format(lower_bound))
+
+physical_devices = tf.config.list_physical_devices('GPU')
+try:
+    tf.config.experimental.set_memory_growth(physical_devices[0], True)
+except:
+    # Invalid device or cannot modify virtual devices once initialized.
+    pass
 
 class OUActionNoise:
     def __init__(self, mean, std_deviation, theta=0.15, dt=1e-2, x_initial=None):
@@ -190,6 +197,11 @@ def save_weights(directory: str, i: int):
     target_actor.save_weights("{}/target-actor_{:3d}".format(directory, i))
     target_critic.save_weights("{}/target-critic_{:3d}".format(directory, i))
 
+
+
+w = tw.Watcher()
+rewards_stream = w.create_stream('rewards')
+
 std_dev = 0.5
 ou_noise = OUActionNoise(mean=np.zeros(1), std_deviation=float(std_dev) * np.ones(1))
 
@@ -246,6 +258,8 @@ for ep in range(total_episodes):
         counter += 1
         if counter == 100:
             done = True
+
+        rewards_stream.write((counter, reward))
 
         buffer.record((prev_state, action, reward, state))
         episodic_reward += reward
