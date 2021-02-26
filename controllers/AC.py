@@ -201,6 +201,7 @@ def save_weights(directory: str, i: int):
 
 w = tw.Watcher()
 rewards_stream = w.create_stream('rewards')
+ep_rewards_stream = w.create_stream('ep_rewards')
 
 std_dev = 0.5
 ou_noise = OUActionNoise(mean=np.zeros(1), std_deviation=float(std_dev) * np.ones(1))
@@ -210,6 +211,8 @@ critic_model = get_critic()
 
 target_actor = get_actor()
 target_critic = get_critic()
+
+lazy_watch = actor_model.observe()
 
 # Making the weights equal initially
 target_actor.set_weights(actor_model.get_weights())
@@ -273,6 +276,7 @@ for ep in range(total_episodes):
 
         prev_state = state
 
+    ep_rewards_stream.write(episodic_reward)
     ep_reward_list.append(episodic_reward)
 
     # Mean of last 40 episodes
