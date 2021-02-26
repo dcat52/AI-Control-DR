@@ -262,8 +262,8 @@ for ep in range(total_episodes):
     ep_reward_list.append(episodic_reward)
 
     # Mean of last 40 episodes
-    avg_reward = np.mean(ep_reward_list[-40:])
-    print("Episode * {} * Avg Reward is ==> {}".format(ep, avg_reward))
+    avg_reward = np.mean(ep_reward_list[-10:])
+    print("Episode: {:3d} -- Current Reward: {:9.2f} -- Avg Reward is: {:9.2f}".format(ep, episodic_reward, avg_reward))
     avg_reward_list.append(avg_reward)
 
     if ep % 25 == 0:
