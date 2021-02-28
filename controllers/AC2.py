@@ -163,6 +163,7 @@ class AC_Agent:
         self.NUM_EPISODES = 1000
         self.EPS_DECAY = (self.EPS_START-self.EPS_END) / self.NUM_EPISODES
         self.TARGET_UPDATE = 10
+        self.TAU = 0.2
 
         self.state_length = 6
         self.action_length = 2
@@ -175,10 +176,7 @@ class AC_Agent:
         self.target_actor_net = Actor_Model()
         self.target_critic_net = Critic_Model()
 
-        self.target_actor_net.setWeights(self.policy_actor_net.getWeights())
-        self.target_critic_net.setWeights(self.policy_critic_net.getWeights())
-        
-        self.optimizer = optim.Adam(self.policy_net.parameters())
+        self.update_targets(tau=1.0)
 
         actor_optimizer = optimizers.Adam()
         critic_optimizer = optimizers.Adam()
@@ -191,7 +189,8 @@ class AC_Agent:
         self.MODE = "train"
 
     def make_action(self, obervation, test=True):
-        pass
+        # TODO: Implement this!
+        return [1.0, 1.0]
 
     def train(self):
 
@@ -212,6 +211,7 @@ class AC_Agent:
                 action = self.make_action(state)
 
                 next_state, reward, done, info = self.env.step(action)
+                done = int(done)
 
                 episodic_reward += reward
 
@@ -219,7 +219,7 @@ class AC_Agent:
                 if counter == 100:
                     done = True
 
-                rewardTensor = tf.tensor([reward])
+                rewardTensor = tf.convert_to_tensor([reward])
 
                 # Store the transition in memory
                 self.buffer.push(state, action, next_state, rewardTensor)
@@ -228,7 +228,7 @@ class AC_Agent:
                 state = next_state
 
                 # Perform one step of the optimization (on the target network)
-                self.optimize_model()
+                self.learn()
 
             final_episode_reward.append(reward)
             cumulative_episode_reward.append(episodic_reward)
@@ -238,44 +238,98 @@ class AC_Agent:
                 
             # Update the target network
             if i_episode % self.TARGET_UPDATE == 0:
-                self.target_actor_net.setWeights(self.policy_actor_net.getWeights())
-                self.target_critic_net.setWeights(self.policy_critic_net.getWeights())
+                self.update_targets()
 
             print(episode_reward)
 
-    def optimize_model(self):
-        if len(self.memory) < self.BATCH_SIZE:
+    @tf.function
+    def update(self, state_batch, action_batch, reward_batch, next_state_batch,):
+        # Training and updating Actor & Critic networks.
+        # See Pseudo Code.
+        with tf.GradientTape() as tape:
+            target_actions = self.target_actor_net(next_state_batch, training=True)
+            y = reward_batch + gamma * target_critic_net(
+                [next_state_batch, target_actions], training=True
+            )
+            critic_value = policy_critic_net([state_batch, action_batch], training=True)
+            critic_loss = tf.math.reduce_mean(tf.math.square(y - critic_value))
+
+        critic_grad = tape.gradient(critic_loss, policy_critic_net.trainable_variables)
+        critic_optimizer.apply_gradients(
+            zip(critic_grad, policy_critic_net.trainable_variables)
+        )
+
+        with tf.GradientTape() as tape:
+            actions = policy_actor_net(state_batch, training=True)
+            critic_value = policy_critic_net([state_batch, actions], training=True)
+            # Used `-value` as we want to maximize the value given
+            # by the critic for our actions
+            actor_loss = -tf.math.reduce_mean(critic_value)
+
+        actor_grad = tape.gradient(actor_loss, actor_model.trainable_variables)
+        actor_optimizer.apply_gradients(
+            zip(actor_grad, actor_model.trainable_variables)
+        )
+
+    def learn(self):
+        if len(self.buffer) < self.BATCH_SIZE:
             return
-        transitions = self.memory.sample(self.BATCH_SIZE)
-        # Transpose the batch (see http://stackoverflow.com/a/19343/3343043 for
-        # detailed explanation).
-        batch = Transition(*zip(*transitions))
 
-        # Compute a mask of non-final states and concatenate the batch elements
-        non_final_mask = tf.convert_to_tensor(tuple(map(lambda s: s is not None,
-                                              batch.next_state)), dtype=tf.uint8)
-        non_final_next_states = tf.cat([tf.convert_to_tensor(s) for s in batch.next_state
-                                                    if s is not None])
-        state_batch = tf.concat(batch.state)
-        action_batch = tf.concat(batch.action)
-        reward_batch = tf.concat(batch.reward)
+        batch_indices = self.buffer.sample(self.BATCH_SIZE)
+        batch = Transition(*zip(*batch_indices))
 
-        # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
-        # columns of actions taken
-        state_action_values = self.policy_net(state_batch).gather(1, action_batch)
+        # Convert to tensors
+        state_batch = tf.concat(batch.state, axis=0)
+        action_batch = tf.concat(batch.action, axis=0)
+        reward_batch = tf.concat(batch.reward, axis=0)
+        next_state_batch = tf.concat(batch.next_state, axis=0)
 
-        # Compute V(s_{t+1}) for all next states.
-        next_state_values = tf.zeros(BATCH_SIZE)
-        next_state_values[non_final_mask] = self.target_net(non_final_next_states).max(1)[0].detach()
-        # Compute the expected Q values
-        expected_state_action_values = (next_state_values * self.GAMMA) + reward_batch
+        self.update(state_batch, action_batch, reward_batch, next_state_batch)
 
-        # Compute Huber loss
-        loss = F.smooth_l1_loss(state_action_values, expected_state_action_values.unsqueeze(1))
+    def update_targets(self, tau=None):
+        if tau is None:
+            tau = self.TAU
 
-        # Optimize the model
-        self.optimizer.zero_grad()
-        loss.backward()
-        for param in self.policy_net.parameters():
-            param.grad.data.clamp_(-1, 1)
-        self.optimizer.step()
+        def update(target_weights, weights, tau):
+            for (a, b) in zip(target_weights, weights):
+                a.assign(b * tau + a * (1 - tau))
+
+        update(self.target_actor_net.variables, self.policy_actor_net.variables, tau)
+        update(self.target_critic_net.variables, self.policy_actor_net.variables, tau)
+
+    # def optimize_model(self):
+    #     if len(self.buffer) < self.BATCH_SIZE:
+    #         return
+    #     transitions = self.buffer.sample(self.BATCH_SIZE)
+    #     # Transpose the batch (see http://stackoverflow.com/a/19343/3343043 for
+    #     # detailed explanation).
+    #     batch = Transition(*zip(*transitions))
+
+    #     # Compute a mask of non-final states and concatenate the batch elements
+    #     non_final_mask = tf.convert_to_tensor(tuple(map(lambda s: int(s is not None),
+    #                                           batch.next_state)), dtype=tf.uint8)
+    #     non_final_next_states = tf.concat([tf.convert_to_tensor(s) for s in batch.next_state
+    #                                                 if s is not None], axis=0)
+    #     state_batch = tf.concat(batch.state, axis=0)
+    #     action_batch = tf.concat(batch.action, axis=0)
+    #     reward_batch = tf.concat(batch.reward, axis=0)
+
+    #     # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
+    #     # columns of actions taken
+    #     state_action_values = self.policy_actor_net(state_batch).gather(1, action_batch)
+
+    #     # Compute V(s_{t+1}) for all next states.
+    #     next_state_values = tf.zeros(BATCH_SIZE)
+    #     next_state_values[non_final_mask] = self.target_net(non_final_next_states).max(1)[0].detach()
+    #     # Compute the expected Q values
+    #     expected_state_action_values = (next_state_values * self.GAMMA) + reward_batch
+
+    #     # Compute Huber loss
+    #     loss = F.smooth_l1_loss(state_action_values, expected_state_action_values.unsqueeze(1))
+
+    #     # Optimize the model
+    #     self.optimizer.zero_grad()
+    #     loss.backward()
+    #     for param in self.policy_net.parameters():
+    #         param.grad.data.clamp_(-1, 1)
+    #     self.optimizer.step()
