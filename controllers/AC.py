@@ -198,21 +198,18 @@ def save_weights(directory: str, i: int):
     target_critic.save_weights("{}/target-critic_{:3d}".format(directory, i))
 
 
-
-w = tw.Watcher()
-rewards_stream = w.create_stream('rewards')
-ep_rewards_stream = w.create_stream('ep_rewards')
-
 std_dev = 0.5
 ou_noise = OUActionNoise(mean=np.zeros(1), std_deviation=float(std_dev) * np.ones(1))
 
 actor_model = get_actor()
 critic_model = get_critic()
-
 target_actor = get_actor()
 target_critic = get_critic()
 
-lazy_watch = actor_model.observe()
+# TensorWatch
+w = tw.Watcher()
+rewards_stream = w.create_stream('rewards')
+ep_rewards_stream = w.create_stream('ep_rewards')
 
 # Making the weights equal initially
 target_actor.set_weights(actor_model.get_weights())
@@ -240,19 +237,11 @@ avg_reward_list = []
 
 # Takes about 4 min to train
 for ep in range(total_episodes):
-
     prev_state = env.reset()
     episodic_reward = 0
-
     counter = 0
-
     while True:
-        # Uncomment this to see the Actor in action
-        # But not in a python notebook.
-        # env.render()
-
         tf_prev_state = tf.expand_dims(tf.convert_to_tensor(prev_state), 0)
-
         action = policy(tf_prev_state, ou_noise)
         # Recieve state and reward from environment.
         # tf.print(action[0])
@@ -262,7 +251,9 @@ for ep in range(total_episodes):
         if counter == 100:
             done = True
 
+        # TensorWatch
         rewards_stream.write((counter, reward))
+        # w.observe(actor_model=actor_model)
 
         buffer.record((prev_state, action, reward, state))
         episodic_reward += reward
@@ -276,8 +267,10 @@ for ep in range(total_episodes):
 
         prev_state = state
 
-    ep_rewards_stream.write(episodic_reward)
     ep_reward_list.append(episodic_reward)
+
+    # TensorWatch
+    ep_rewards_stream.write(episodic_reward)
 
     # Mean of last 40 episodes
     avg_reward = np.mean(ep_reward_list[-10:])
