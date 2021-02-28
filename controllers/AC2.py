@@ -11,6 +11,8 @@ from tensorflow.keras import layers, optimizers
 from tensorflow import nn
 import numpy as np
 
+np.set_printoptions(precision=2)
+
 # tf.manual_seed(595)
 np.random.seed(595)
 random.seed(595)
@@ -105,30 +107,36 @@ class Actor_Model(tf.keras.Model):
         # Initialize weights between -3e-3 and 3-e3
         self.last_init = tf.random_uniform_initializer(minval=-0.003, maxval=0.003)
 
-        self.inp = layers.Input(shape=(state_length,))
+        # self.inp = layers.Input(shape=(state_length,))
+        self.inp = layers.Dense(state_length, activation=nn.relu)
         self.hl1 = layers.Dense(256, activation=nn.relu)
         self.hl2 = layers.Dense(256, activation=nn.relu)
         self.out = layers.Dense(action_length, activation=nn.tanh, kernel_initializer=self.last_init)
 
     def call(self, inputs):
-        self.inp(inputs)
-        self.hl1(self.input)
-        self.hl2(self.hl1)
-        self.out(self.hl2)
-        self.out *= upper_bound
-        return self.out
+        s1 = self.inp(inputs)
+        s2 = self.hl1(s1)
+        s3 = self.hl2(s2)
+        s4 = self.out(s3)
+        s5 = s4 * self.upper_bound
+        return s5
+
+    # def get_model(self):
+    #     model = tf.keras.Model(inputs=layers.Input(shape=(state_length,)), outputs=)
 
 
 class Critic_Model(tf.keras.Model):
     def __init__(self, state_length=6, action_length=2):
         super(Critic_Model, self).__init__()
         # State as input
-        self.state_input = layers.Input(shape=(state_length))
+        # self.state_input = layers.Input(shape=(state_length))
+        self.state_input = layers.Dense(state_length, activation=nn.relu)
         self.state_hl1 = layers.Dense(16, activation=nn.relu)
         self.state_out = layers.Dense(32, activation=nn.relu)
 
         # Action as input
-        self.action_input = layers.Input(shape=(action_length))
+        # self.action_input = layers.Input(shape=(action_length))
+        self.action_input = layers.Dense(action_length, activation=nn.relu)
         self.action_out = layers.Dense(32, activation=nn.relu)
 
         # Both are passed through seperate layer before concatenating
@@ -138,18 +146,21 @@ class Critic_Model(tf.keras.Model):
         self.out = layers.Dense(1)
 
     def call(self, inputs):
-        self.state_input(inputs)
-        self.state_hl1(self.state_input)
-        self.state_out(self.state_hl1)
+        ss1 = self.state_input(inputs[0])
+        ss2 = self.state_hl1(ss1)
+        ss3 = self.state_out(ss2)
 
-        self.action_input(inputs)
-        self.action_out(self.action_input)
+        as1 = self.action_input(inputs[1])
+        as2 = self.action_out(as1)
 
-        self.combined_input([self.state_out, self.action_out])
-        self.combined_hl1(self.combined_input)
-        self.combined_hl2(self.combined_hl1)
-        self.out(self.combined_hl2)
-        return self.out
+        cs1 = self.combined_input([ss3, as2])
+        cs2 = self.combined_hl1(cs1)
+        cs3 = self.combined_hl2(cs2)
+        cs4 = self.out(cs3)
+        return cs4
+
+    # def get_model(self):
+    #     model = keras.Model(inputs=inputs, outputs=outputs, name="mnist_model")
 
         
 class AC_Agent:
@@ -178,10 +189,10 @@ class AC_Agent:
 
         self.update_targets(tau=1.0)
 
-        actor_optimizer = optimizers.Adam()
-        critic_optimizer = optimizers.Adam()
+        self.actor_optimizer = optimizers.Adam()
+        self.critic_optimizer = optimizers.Adam()
 
-        self.buffer = Buffer(capacity=100000)
+        self.buffer = Buffer(capacity=10000)
 
         self.steps_done = 0
         self.episode_durations = []
@@ -190,7 +201,7 @@ class AC_Agent:
 
     def make_action(self, obervation, test=True):
         # TODO: Implement this!
-        return [1.0, 1.0]
+        return [1.0, .5]
 
     def train(self):
 
@@ -208,7 +219,7 @@ class AC_Agent:
 
             while not done:
                 # Select and perform an action
-                action = self.make_action(state)
+                action = self.make_action(state, test=False)
 
                 next_state, reward, done, info = self.env.step(action)
                 done = int(done)
@@ -240,7 +251,7 @@ class AC_Agent:
             if i_episode % self.TARGET_UPDATE == 0:
                 self.update_targets()
 
-            print(episode_reward)
+            print(episodic_reward)
 
     @tf.function
     def update(self, state_batch, action_batch, reward_batch, next_state_batch,):
@@ -248,27 +259,27 @@ class AC_Agent:
         # See Pseudo Code.
         with tf.GradientTape() as tape:
             target_actions = self.target_actor_net(next_state_batch, training=True)
-            y = reward_batch + gamma * target_critic_net(
+            y = reward_batch + self.GAMMA * self.target_critic_net(
                 [next_state_batch, target_actions], training=True
             )
-            critic_value = policy_critic_net([state_batch, action_batch], training=True)
+            critic_value = self.policy_critic_net([state_batch, action_batch], training=True)
             critic_loss = tf.math.reduce_mean(tf.math.square(y - critic_value))
 
-        critic_grad = tape.gradient(critic_loss, policy_critic_net.trainable_variables)
-        critic_optimizer.apply_gradients(
-            zip(critic_grad, policy_critic_net.trainable_variables)
+        critic_grad = tape.gradient(critic_loss, self.policy_critic_net.trainable_variables)
+        self.critic_optimizer.apply_gradients(
+            zip(critic_grad, self.policy_critic_net.trainable_variables)
         )
 
         with tf.GradientTape() as tape:
-            actions = policy_actor_net(state_batch, training=True)
-            critic_value = policy_critic_net([state_batch, actions], training=True)
+            actions = self.policy_actor_net(state_batch, training=True)
+            critic_value = self.policy_critic_net([state_batch, actions], training=True)
             # Used `-value` as we want to maximize the value given
             # by the critic for our actions
             actor_loss = -tf.math.reduce_mean(critic_value)
 
-        actor_grad = tape.gradient(actor_loss, actor_model.trainable_variables)
-        actor_optimizer.apply_gradients(
-            zip(actor_grad, actor_model.trainable_variables)
+        actor_grad = tape.gradient(actor_loss, self.policy_actor_net.trainable_variables)
+        self.actor_optimizer.apply_gradients(
+            zip(actor_grad, self.policy_actor_net.trainable_variables)
         )
 
     def learn(self):
@@ -279,10 +290,15 @@ class AC_Agent:
         batch = Transition(*zip(*batch_indices))
 
         # Convert to tensors
-        state_batch = tf.concat(batch.state, axis=0)
-        action_batch = tf.concat(batch.action, axis=0)
-        reward_batch = tf.concat(batch.reward, axis=0)
-        next_state_batch = tf.concat(batch.next_state, axis=0)
+        # state_batch = tf.concat(batch.state, axis=-1)
+        # action_batch = tf.concat(batch.action, axis=-1)
+        # reward_batch = tf.concat(batch.reward, axis=-1)
+        # next_state_batch = tf.concat(batch.next_state, axis=-1)
+
+        state_batch = tf.convert_to_tensor(batch.state)
+        action_batch = tf.convert_to_tensor(batch.action)
+        reward_batch = tf.convert_to_tensor(batch.reward)
+        next_state_batch = tf.convert_to_tensor(batch.next_state)
 
         self.update(state_batch, action_batch, reward_batch, next_state_batch)
 
@@ -295,7 +311,7 @@ class AC_Agent:
                 a.assign(b * tau + a * (1 - tau))
 
         update(self.target_actor_net.variables, self.policy_actor_net.variables, tau)
-        update(self.target_critic_net.variables, self.policy_actor_net.variables, tau)
+        update(self.target_critic_net.variables, self.policy_critic_net.variables, tau)
 
     # def optimize_model(self):
     #     if len(self.buffer) < self.BATCH_SIZE:
