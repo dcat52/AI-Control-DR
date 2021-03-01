@@ -21,7 +21,7 @@ Transition = namedtuple('Transition',
                         ('state', 'action', 'next_state', 'reward'))
 
 class OUActionNoise:
-    def __init__(self, mean, std_dev, theta=0.15, dt=1e-2, x_initial=None):
+    def __init__(self, mean, std_deviation, theta=0.15, dt=1e-2, x_initial=None):
         self.theta = theta
         self.mean = mean
         self.std_dev = std_deviation
@@ -47,36 +47,6 @@ class OUActionNoise:
         else:
             self.x_prev = np.zeros_like(self.mean)
 
-# class Buffer:
-#     def __init__(self, capacity=100000, batch_size=64, state_length=6, action_length=2):
-        
-#         # Number of "experiences" to store at max
-#         self.capacity = capacity
-#         # Num of tuples to train on.
-#         self.batch_size = batch_size
-
-#         # Its tells us num of times record() was called.
-#         self.counter = 0
-
-#         # Instead of list of tuples as the exp.replay concept go
-#         # We use different np.arrays for each tuple element
-#         self.state_buffer = np.zeros((self.capacity, state_length))
-#         self.action_buffer = np.zeros((self.capacity, action_length))
-#         self.reward_buffer = np.zeros((self.capacity, 1))
-#         self.next_state_buffer = np.zeros((self.capacity, state_length))
-
-#     # Takes (s,a,r,s') obervation tuple as input
-#     def record(self, obs_tuple):
-#         # Set index to zero if capacity is exceeded,
-#         # replacing old records
-#         index = self.counter % self.capacity
-
-#         self.state_buffer[index] = obs_tuple[0]
-#         self.action_buffer[index] = obs_tuple[1][0]
-#         self.reward_buffer[index] = obs_tuple[2]
-#         self.next_state_buffer[index] = obs_tuple[3]
-
-#         self.counter += 1
 
 class Buffer(object):
 
@@ -121,9 +91,6 @@ class Actor_Model(tf.keras.Model):
         s5 = s4 * self.upper_bound
         return s5
 
-    # def get_model(self):
-    #     model = tf.keras.Model(inputs=layers.Input(shape=(state_length,)), outputs=)
-
 
 class Critic_Model(tf.keras.Model):
     def __init__(self, state_length=6, action_length=2):
@@ -159,9 +126,6 @@ class Critic_Model(tf.keras.Model):
         cs4 = self.out(cs3)
         return cs4
 
-    # def get_model(self):
-    #     model = keras.Model(inputs=inputs, outputs=outputs, name="mnist_model")
-
         
 class AC_Agent:
     def __init__(self, env, args):
@@ -174,13 +138,19 @@ class AC_Agent:
         self.NUM_EPISODES = 1000
         self.EPS_DECAY = (self.EPS_START-self.EPS_END) / self.NUM_EPISODES
         self.TARGET_UPDATE = 10
-        self.TAU = 0.2
+        self.TAU = 0.5
+        self.STD_DEV = 0.1
+        self.SAVE_FREQ = 25
 
         self.state_length = 6
         self.action_length = 2
         self.action_bounds = (-1.0, 1.0)
 
+        self.lower_bound, self.upper_bound = self.action_bounds
+
         self.eps = self.EPS_START
+
+        self.ou_noise = OUActionNoise(mean=np.zeros(1), std_deviation=float(self.STD_DEV) * np.ones(1))
 
         self.policy_actor_net = Actor_Model()
         self.policy_critic_net = Critic_Model()
@@ -192,16 +162,31 @@ class AC_Agent:
         self.actor_optimizer = optimizers.Adam()
         self.critic_optimizer = optimizers.Adam()
 
-        self.buffer = Buffer(capacity=10000)
+        self.buffer = Buffer(capacity=100000)
 
         self.steps_done = 0
         self.episode_durations = []
 
-        self.MODE = "train"
+    def save_weights(self, directory: str, i: int):
+        actor_model.save_weights("{}/actor-model_{:3d}".format(directory, i))
+        critic_model.save_weights("{}/critic-model_{:3d}".format(directory, i))
+        target_actor.save_weights("{}/target-actor_{:3d}".format(directory, i))
+        target_critic.save_weights("{}/target-critic_{:3d}".format(directory, i))
 
-    def make_action(self, obervation, test=True):
-        # TODO: Implement this!
-        return [1.0, .5]
+    def make_action(self, state, test=True):
+
+        state = state[None, :]
+
+        sampled_actions = tf.squeeze(self.policy_actor_net(state))
+        noise = self.ou_noise()
+
+        # Adding noise to action
+        sampled_actions = sampled_actions.numpy() + noise
+
+        # We make sure action is within bounds
+        legal_action = np.clip(sampled_actions, self.lower_bound, self.upper_bound)
+
+        return legal_action
 
     def train(self):
 
@@ -251,7 +236,22 @@ class AC_Agent:
             if i_episode % self.TARGET_UPDATE == 0:
                 self.update_targets()
 
-            print(episodic_reward)
+            # Mean of last 40 episodes
+            avg_reward = np.mean(cumulative_episode_reward[-10:])
+            print("Episode: {:3d} -- Current Reward: {:9.2f} -- Avg Reward is: {:9.2f}".format(
+                i_episode, episodic_reward, avg_reward
+                ))
+
+            if i_episode % self.SAVE_FREQ == 0:
+                save_weights("weights", ep)
+
+        # Plotting graph
+        # Episodes versus Avg. Rewards
+        plt.plot(avg_reward_list)
+        plt.xlabel("Episode")
+        plt.ylabel("Avg. Epsiodic Reward")
+        plt.show()
+    
 
     @tf.function
     def update(self, state_batch, action_batch, reward_batch, next_state_batch,):
@@ -289,12 +289,6 @@ class AC_Agent:
         batch_indices = self.buffer.sample(self.BATCH_SIZE)
         batch = Transition(*zip(*batch_indices))
 
-        # Convert to tensors
-        # state_batch = tf.concat(batch.state, axis=-1)
-        # action_batch = tf.concat(batch.action, axis=-1)
-        # reward_batch = tf.concat(batch.reward, axis=-1)
-        # next_state_batch = tf.concat(batch.next_state, axis=-1)
-
         state_batch = tf.convert_to_tensor(batch.state)
         action_batch = tf.convert_to_tensor(batch.action)
         reward_batch = tf.convert_to_tensor(batch.reward)
@@ -312,40 +306,3 @@ class AC_Agent:
 
         update(self.target_actor_net.variables, self.policy_actor_net.variables, tau)
         update(self.target_critic_net.variables, self.policy_critic_net.variables, tau)
-
-    # def optimize_model(self):
-    #     if len(self.buffer) < self.BATCH_SIZE:
-    #         return
-    #     transitions = self.buffer.sample(self.BATCH_SIZE)
-    #     # Transpose the batch (see http://stackoverflow.com/a/19343/3343043 for
-    #     # detailed explanation).
-    #     batch = Transition(*zip(*transitions))
-
-    #     # Compute a mask of non-final states and concatenate the batch elements
-    #     non_final_mask = tf.convert_to_tensor(tuple(map(lambda s: int(s is not None),
-    #                                           batch.next_state)), dtype=tf.uint8)
-    #     non_final_next_states = tf.concat([tf.convert_to_tensor(s) for s in batch.next_state
-    #                                                 if s is not None], axis=0)
-    #     state_batch = tf.concat(batch.state, axis=0)
-    #     action_batch = tf.concat(batch.action, axis=0)
-    #     reward_batch = tf.concat(batch.reward, axis=0)
-
-    #     # Compute Q(s_t, a) - the model computes Q(s_t), then we select the
-    #     # columns of actions taken
-    #     state_action_values = self.policy_actor_net(state_batch).gather(1, action_batch)
-
-    #     # Compute V(s_{t+1}) for all next states.
-    #     next_state_values = tf.zeros(BATCH_SIZE)
-    #     next_state_values[non_final_mask] = self.target_net(non_final_next_states).max(1)[0].detach()
-    #     # Compute the expected Q values
-    #     expected_state_action_values = (next_state_values * self.GAMMA) + reward_batch
-
-    #     # Compute Huber loss
-    #     loss = F.smooth_l1_loss(state_action_values, expected_state_action_values.unsqueeze(1))
-
-    #     # Optimize the model
-    #     self.optimizer.zero_grad()
-    #     loss.backward()
-    #     for param in self.policy_net.parameters():
-    #         param.grad.data.clamp_(-1, 1)
-    #     self.optimizer.step()
