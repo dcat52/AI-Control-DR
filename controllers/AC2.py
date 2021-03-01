@@ -10,6 +10,7 @@ import tensorflow as tf
 from tensorflow.keras import layers, optimizers
 from tensorflow import nn
 import numpy as np
+import matplotlib.pyplot as plt
 
 np.set_printoptions(precision=2)
 
@@ -40,6 +41,12 @@ class OUActionNoise:
         # Makes next noise dependent on current one
         self.x_prev = x
         return x
+
+    def get_std_dev(self):
+        return self.std_dev
+
+    def set_std_dev(self, std_deviation):
+        self.std_dev = std_deviation
 
     def reset(self):
         if self.x_initial is not None:
@@ -131,21 +138,21 @@ class AC_Agent:
     def __init__(self, env, args):
         self.env = env
 
-        self.BATCH_SIZE = 32
-        self.GAMMA = 0.99
-        self.EPS_START = 1.0
-        self.EPS_END = 0.025
+        self.SAVE_FREQ =50
+        self.BATCH_SIZE = 64
         self.NUM_EPISODES = 1000
-        self.EPS_DECAY = (self.EPS_START-self.EPS_END) / self.NUM_EPISODES
         self.TARGET_UPDATE = 10
-        self.TAU = 0.5
+        self.TAU = 0.2
+        self.GAMMA = 0.99
         self.STD_DEV = 0.1
-        self.SAVE_FREQ = 25
+
+        self.START = 1.0
+        self.END = 0.025
+        self.DECAY = (self.START-self.END) / self.NUM_EPISODES
 
         self.state_length = 6
         self.action_length = 2
         self.action_bounds = (-1.0, 1.0)
-
         self.lower_bound, self.upper_bound = self.action_bounds
 
         self.eps = self.EPS_START
@@ -162,12 +169,13 @@ class AC_Agent:
         self.actor_optimizer = optimizers.Adam()
         self.critic_optimizer = optimizers.Adam()
 
-        self.buffer = Buffer(capacity=100000)
+        self.buffer = Buffer(capacity=10000)
 
         self.steps_done = 0
         self.episode_durations = []
 
     def save_weights(self, directory: str, i: int):
+        print("Saving model weights.")
         self.policy_actor_net.save_weights("{}/policy_actor_net_{:3d}".format(directory, i))
         self.policy_critic_net.save_weights("{}/policy_critic_net_{:3d}".format(directory, i))
         self.target_actor_net.save_weights("{}/target_actor_net_{:3d}".format(directory, i))
@@ -228,9 +236,6 @@ class AC_Agent:
 
             final_episode_reward.append(reward)
             cumulative_episode_reward.append(episodic_reward)
-
-            if i_episode % 100 == 0:
-              print(reward)
                 
             # Update the target network
             if i_episode % self.TARGET_UPDATE == 0:
@@ -242,12 +247,14 @@ class AC_Agent:
                 i_episode, episodic_reward, avg_reward
                 ))
 
+            self.ou_noise.set_std_dev(self.ou_noise.get_std_dev() - self.DECAY)
+
             if i_episode % self.SAVE_FREQ == 0:
                 self.save_weights("weights", i_episode)
 
         # Plotting graph
         # Episodes versus Avg. Rewards
-        plt.plot(avg_reward_list)
+        plt.plot(cumulative_episode_reward)
         plt.xlabel("Episode")
         plt.ylabel("Avg. Epsiodic Reward")
         plt.show()
