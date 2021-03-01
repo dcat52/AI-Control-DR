@@ -168,10 +168,10 @@ class AC_Agent:
         self.episode_durations = []
 
     def save_weights(self, directory: str, i: int):
-        actor_model.save_weights("{}/actor-model_{:3d}".format(directory, i))
-        critic_model.save_weights("{}/critic-model_{:3d}".format(directory, i))
-        target_actor.save_weights("{}/target-actor_{:3d}".format(directory, i))
-        target_critic.save_weights("{}/target-critic_{:3d}".format(directory, i))
+        self.policy_actor_net.save_weights("{}/policy_actor_net_{:3d}".format(directory, i))
+        self.policy_critic_net.save_weights("{}/policy_critic_net_{:3d}".format(directory, i))
+        self.target_actor_net.save_weights("{}/target_actor_net_{:3d}".format(directory, i))
+        self.target_critic_net.save_weights("{}/target_critic_net_{:3d}".format(directory, i))
 
     def make_action(self, state, test=True):
 
@@ -243,7 +243,7 @@ class AC_Agent:
                 ))
 
             if i_episode % self.SAVE_FREQ == 0:
-                save_weights("weights", ep)
+                self.save_weights("weights", i_episode)
 
         # Plotting graph
         # Episodes versus Avg. Rewards
