@@ -1,12 +1,17 @@
-import gym
-import tensorflow as tf
+
+from keras.constraints import maxnorm
 from tensorflow.keras import layers
 import numpy as np
-import matplotlib.pyplot as plt
 from simulator.Environment import Environment
-import tensorwatch as tw
-# problem = "Pendulum-v0"
-# env = gym.make(problem)
+import datetime
+import tensorflow as tf
+
+twatch = True
+tboard = False
+
+if twatch:
+    import tensorwatch as tw
+
 env = Environment(robot_start=(300, 300), goal=(400, 400), goal_threshold=20, render=True)
 
 num_states = 6
@@ -133,7 +138,6 @@ class Buffer:
 
         self.update(state_batch, action_batch, reward_batch, next_state_batch)
 
-
 # This update target parameters slowly
 # Based on rate `tau`, which is much less than one.
 @tf.function
@@ -146,8 +150,8 @@ def get_actor():
     last_init = tf.random_uniform_initializer(minval=-0.003, maxval=0.003)
 
     inputs = layers.Input(shape=(num_states,))
-    out = layers.Dense(256, activation="relu")(inputs)
-    out = layers.Dense(256, activation="relu")(out)
+    out = layers.Dense(256, activation="relu", kernel_regularizer=maxnorm(3))(inputs)
+    out = layers.Dense(256, activation="relu", kernel_regularizer=maxnorm(3))(out)
     outputs = layers.Dense(2, activation="tanh", kernel_initializer=last_init)(out)
 
     # Our upper bound is 2.0 for Pendulum.
@@ -155,16 +159,15 @@ def get_actor():
     model = tf.keras.Model(inputs, outputs)
     return model
 
-
 def get_critic():
     # State as input
     state_input = layers.Input(shape=(num_states))
-    state_out = layers.Dense(16, activation="relu")(state_input)
-    state_out = layers.Dense(32, activation="relu")(state_out)
+    state_out = layers.Dense(16, activation="relu", kernel_regularizer=maxnorm(3))(state_input)
+    state_out = layers.Dense(32, activation="relu", kernel_regularizer=maxnorm(3))(state_out)
 
     # Action as input
     action_input = layers.Input(shape=(num_actions))
-    action_out = layers.Dense(32, activation="relu")(action_input)
+    action_out = layers.Dense(32, activation="relu", kernel_regularizer=maxnorm(3))(action_input)
 
     # Both are passed through seperate layer before concatenating
     concat = layers.Concatenate()([state_out, action_out])
@@ -197,7 +200,6 @@ def save_weights(directory: str, i: int):
     target_actor.save_weights("{}/target-actor_{:3d}".format(directory, i))
     target_critic.save_weights("{}/target-critic_{:3d}".format(directory, i))
 
-
 std_dev = 0.5
 ou_noise = OUActionNoise(mean=np.zeros(1), std_deviation=float(std_dev) * np.ones(1))
 
@@ -206,18 +208,13 @@ critic_model = get_critic()
 target_actor = get_actor()
 target_critic = get_critic()
 
-# TensorWatch
-w = tw.Watcher()
-rewards_stream = w.create_stream('rewards')
-ep_rewards_stream = w.create_stream('ep_rewards')
-
 # Making the weights equal initially
 target_actor.set_weights(actor_model.get_weights())
 target_critic.set_weights(critic_model.get_weights())
 
 # Learning rate for actor-critic models
-critic_lr = 0.002
-actor_lr = 0.001
+critic_lr = 0.0002
+actor_lr = 0.0001
 
 critic_optimizer = tf.keras.optimizers.Adam(critic_lr)
 actor_optimizer = tf.keras.optimizers.Adam(actor_lr)
@@ -235,7 +232,25 @@ ep_reward_list = []
 # To store average reward history of last few episodes
 avg_reward_list = []
 
-# Takes about 4 min to train
+# TensorWatch
+if twatch:
+    w = tw.Watcher()
+    rewards_stream = w.create_stream('rewards')
+    ep_rewards_stream = w.create_stream('ep_rewards')
+    actor_weights_stream0 = w.create_stream('actor_weights0')
+    actor_weights_stream1 = w.create_stream('actor_weights1')
+    actor_weights_stream2 = w.create_stream('actor_weights2')
+    actor_weights_stream3 = w.create_stream('actor_weights3')
+    actor_weights_stream4 = w.create_stream('actor_weights4')
+    actor_weights_stream5 = w.create_stream('actor_weights5')
+    # critic_weights_stream = w.create_stream('critic_weights')
+
+# TensorBoard
+if tboard:
+    log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    summary_writer = tf.summary.create_file_writer(logdir=log_dir)
+    reward_writer = tf.summary.create_file_writer(logdir='logs/fit/')
+
 for ep in range(total_episodes):
     prev_state = env.reset()
     episodic_reward = 0
@@ -243,24 +258,39 @@ for ep in range(total_episodes):
     while True:
         tf_prev_state = tf.expand_dims(tf.convert_to_tensor(prev_state), 0)
         action = policy(tf_prev_state, ou_noise)
-        # Recieve state and reward from environment.
-        # tf.print(action[0])
         state, reward, done, info = env.step(action[0])
 
         counter += 1
         if counter == 100:
             done = True
 
-        # TensorWatch
-        rewards_stream.write((counter, reward))
-        # w.observe(actor_model=actor_model)
+        ## TensorWatch
+        if twatch:
+            rewards_stream.write((counter, reward))
+            weights_sum = []
+            layer = actor_model.get_weights()[0]
+            for i in range(len(layer)):
+                weights_sum.append(np.sum(actor_model.get_weights()[0]))
+            actor_weights_stream0.write(weights_sum[0])
+            actor_weights_stream1.write((weights_sum[1]))
+            actor_weights_stream2.write((weights_sum[2]))
+            actor_weights_stream3.write((weights_sum[3]))
+            actor_weights_stream4.write((weights_sum[4]))
+            actor_weights_stream5.write((weights_sum[5]))
+            # critic_weights_stream.write((counter, critic_model.get_weights()))
 
+        # TensorBoard
+        if tboard:
+            with reward_writer.as_default():
+                tf.summary.scalar('reward', reward, step=counter)
+
+        # Record events and update models
         buffer.record((prev_state, action, reward, state))
         episodic_reward += reward
-
         buffer.learn()
         update_target(target_actor.variables, actor_model.variables, tau)
         update_target(target_critic.variables, critic_model.variables, tau)
+
         # End this episode when `done` is True
         if done:
             break
@@ -270,7 +300,12 @@ for ep in range(total_episodes):
     ep_reward_list.append(episodic_reward)
 
     # TensorWatch
-    ep_rewards_stream.write(episodic_reward)
+    if twatch:
+        ep_rewards_stream.write((ep, episodic_reward))
+    # TensorBoard
+    if tboard:
+        with summary_writer.as_default():
+            tf.summary.scalar('episodic_reward', episodic_reward, step=ep)
 
     # Mean of last 40 episodes
     avg_reward = np.mean(ep_reward_list[-10:])
@@ -279,10 +314,3 @@ for ep in range(total_episodes):
 
     if ep % 25 == 0:
         save_weights("weights", ep)
-
-# Plotting graph
-# Episodes versus Avg. Rewards
-plt.plot(avg_reward_list)
-plt.xlabel("Episode")
-plt.ylabel("Avg. Epsiodic Reward")
-plt.show()
