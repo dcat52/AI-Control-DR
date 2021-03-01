@@ -146,7 +146,7 @@ class Environment:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
                 self.running = False
             if event.type == pygame.KEYDOWN and event.key == pygame.K_p:
-                pygame.image.save(self.screen, "bouncing_balls.png")
+                pygame.image.save(self.screen, "screenshot.png")
             if event.type == pygame.KEYDOWN and event.key == pygame.K_COMMA:
                 self.render_step = max(self.render_step-1, 1)
                 print("Render step is {}".format(self.render_step))
@@ -170,7 +170,7 @@ class Environment:
         Draw the objects.
         :return: None
         """
-        pygame.draw.circle(self.screen, (0, 150, 0), center=self.goal, radius=10)
+        pygame.draw.circle(self.screen, (0, 150, 0), self.goal, 10)
         self.space.debug_draw(self.draw_options)
 
 if __name__ == "__main__":
