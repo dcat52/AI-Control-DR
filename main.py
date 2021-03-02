@@ -19,6 +19,7 @@ def parse():
     parser.add_argument('--tau', dest="TAU", default=0.2, type=float, help='Update ratio of target network')
     parser.add_argument('--gamma', dest="GAMMA", default=0.99, type=float, help='Future reward decay')
     parser.add_argument('--std', dest="STD_DEV", default=0.1, type=float, help='Standard deviation of noise')
+    parser.add_argument('--save_dir', dest="SAVE_DIR", default="weights", type=str, help='Location to save weights')
 
     # environment settings
     parser.add_argument('--start_loc', default=[300, 300], nargs='+', type=int, help='Start location in format --start_loc x y')

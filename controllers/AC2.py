@@ -142,13 +142,17 @@ class AC_Agent:
 
         self.env = env
 
-        self.SAVE_FREQ =50
-        self.BATCH_SIZE = 64
+        # --------------------------------------
+        # NOTE: These parameters are overwritten when run by `main.py`
+        self.SAVE_FREQ = 50
+        self.BATCH_SIZE = 32
         self.NUM_EPISODES = 1000
         self.TARGET_UPDATE = 10
         self.TAU = 0.2
         self.GAMMA = 0.99
         self.STD_DEV = 0.1
+        self.SAVE_DIR = "weights"
+        # --------------------------------------
 
         # self.START = 1.0
         # self.END = 0.025
@@ -257,7 +261,7 @@ class AC_Agent:
             # self.ou_noise.set_std_dev(self.ou_noise.get_std_dev() - self.DECAY)
 
             if i_episode % self.SAVE_FREQ == 0:
-                self.save_weights("weights", i_episode)
+                self.save_weights(self.SAVE_DIR, i_episode)
 
         # Plotting graph
         # Episodes versus Avg. Rewards
