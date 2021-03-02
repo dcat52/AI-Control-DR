@@ -136,6 +136,10 @@ class Critic_Model(tf.keras.Model):
         
 class AC_Agent:
     def __init__(self, env, args):
+
+        self.args = args
+        args = vars(args)
+
         self.env = env
 
         self.SAVE_FREQ =50
@@ -146,16 +150,19 @@ class AC_Agent:
         self.GAMMA = 0.99
         self.STD_DEV = 0.1
 
-        self.START = 1.0
-        self.END = 0.025
-        self.DECAY = (self.START-self.END) / self.NUM_EPISODES
+        # self.START = 1.0
+        # self.END = 0.025
+        # self.DECAY = (self.START - self.END) / self.NUM_EPISODES
+
+        # parse args and override previous variables
+        for k, v in args.items():
+            # using exec like this is not recommended but works
+            exec("self." + k + " = " + str(v))
 
         self.state_length = 6
         self.action_length = 2
         self.action_bounds = (-1.0, 1.0)
         self.lower_bound, self.upper_bound = self.action_bounds
-
-        self.eps = self.EPS_START
 
         self.ou_noise = OUActionNoise(mean=np.zeros(1), std_deviation=float(self.STD_DEV) * np.ones(1))
 
@@ -247,7 +254,7 @@ class AC_Agent:
                 i_episode, episodic_reward, avg_reward
                 ))
 
-            self.ou_noise.set_std_dev(self.ou_noise.get_std_dev() - self.DECAY)
+            # self.ou_noise.set_std_dev(self.ou_noise.get_std_dev() - self.DECAY)
 
             if i_episode % self.SAVE_FREQ == 0:
                 self.save_weights("weights", i_episode)
