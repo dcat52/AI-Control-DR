@@ -146,12 +146,15 @@ class AC_Agent:
         # NOTE: These parameters are overwritten when run by `main.py`
         self.SAVE_FREQ = 50
         self.BATCH_SIZE = 32
+        self.BUFFER_CAPACITY = 10000
         self.NUM_EPISODES = 1000
         self.TARGET_UPDATE = 10
         self.TAU = 0.2
         self.GAMMA = 0.99
         self.STD_DEV = 0.1
         self.SAVE_DIR = "weights"
+        self.ACTOR_LR = 0.0001
+        self.CRITIC_LR = 0.0002
         # --------------------------------------
 
         # self.START = 1.0
@@ -163,7 +166,9 @@ class AC_Agent:
             # using exec like this is not recommended but works
             exec("self." + k + " = " + str(v))
 
-        self.state_length = 6
+        state = self.env.reset()
+
+        self.state_length = state.shape[0]
         self.action_length = 2
         self.action_bounds = (-1.0, 1.0)
         self.lower_bound, self.upper_bound = self.action_bounds
@@ -177,10 +182,10 @@ class AC_Agent:
 
         self.update_targets(tau=1.0)
 
-        self.actor_optimizer = optimizers.Adam()
-        self.critic_optimizer = optimizers.Adam()
+        self.actor_optimizer = optimizers.Adam(learning_rate=self.ACTOR_LR)
+        self.critic_optimizer = optimizers.Adam(learning_rate=self.CRITIC_LR)
 
-        self.buffer = Buffer(capacity=10000)
+        self.buffer = Buffer(capacity=self.BUFFER_CAPACITY)
 
         self.steps_done = 0
         self.episode_durations = []
