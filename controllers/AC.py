@@ -1,3 +1,4 @@
+import shutil
 
 from keras.constraints import maxnorm
 from tensorflow.keras import layers
@@ -5,9 +6,10 @@ import numpy as np
 from simulator.Environment import Environment
 import datetime
 import tensorflow as tf
+import matplotlib.pyplot as plt
 
-twatch = True
-tboard = False
+twatch = False
+tboard = True
 
 if twatch:
     import tensorwatch as tw
@@ -237,6 +239,7 @@ if twatch:
     w = tw.Watcher()
     rewards_stream = w.create_stream('rewards')
     ep_rewards_stream = w.create_stream('ep_rewards')
+    actor_weights_stream = w.create_stream('actor_weights')
     actor_weights_stream0 = w.create_stream('actor_weights0')
     actor_weights_stream1 = w.create_stream('actor_weights1')
     actor_weights_stream2 = w.create_stream('actor_weights2')
@@ -247,14 +250,22 @@ if twatch:
 
 # TensorBoard
 if tboard:
-    log_dir = "logs/fit/" + datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    log_dir = "logs/fit/"
+    log_dir_weights = "logs/weights/"
     summary_writer = tf.summary.create_file_writer(logdir=log_dir)
-    reward_writer = tf.summary.create_file_writer(logdir='logs/fit/')
+    weights_writer0 = tf.summary.create_file_writer(logdir=log_dir_weights+'x_pos')
+    weights_writer1 = tf.summary.create_file_writer(logdir=log_dir_weights+'y_pos')
+    weights_writer2 = tf.summary.create_file_writer(logdir=log_dir_weights+'theta')
+    weights_writer3 = tf.summary.create_file_writer(logdir=log_dir_weights+'x_vel')
+    weights_writer4 = tf.summary.create_file_writer(logdir=log_dir_weights+'y_vel')
+    weights_writer5 = tf.summary.create_file_writer(logdir=log_dir_weights+'theta_vel')
 
+weights_sum = [1,1,1,1,1,1]
 for ep in range(total_episodes):
     prev_state = env.reset()
     episodic_reward = 0
     counter = 0
+    summary_writer.flush()
     while True:
         tf_prev_state = tf.expand_dims(tf.convert_to_tensor(prev_state), 0)
         action = policy(tf_prev_state, ou_noise)
@@ -267,10 +278,10 @@ for ep in range(total_episodes):
         ## TensorWatch
         if twatch:
             rewards_stream.write((counter, reward))
-            weights_sum = []
             layer = actor_model.get_weights()[0]
             for i in range(len(layer)):
-                weights_sum.append(np.sum(actor_model.get_weights()[0]))
+                # weights_sum.append(abs(np.sum(actor_model.get_weights()[i])))
+                weights_sum[i] = abs(np.sum(actor_model.get_weights()[i]))
             actor_weights_stream0.write(weights_sum[0])
             actor_weights_stream1.write((weights_sum[1]))
             actor_weights_stream2.write((weights_sum[2]))
@@ -281,8 +292,26 @@ for ep in range(total_episodes):
 
         # TensorBoard
         if tboard:
-            with reward_writer.as_default():
+            with summary_writer.as_default():
+                tf.summary.flush()
                 tf.summary.scalar('reward', reward, step=counter)
+
+            input_layer = actor_model.get_weights()[0]
+            for i in range(len(input_layer)):
+                # weights_sum.append(abs(np.sum(actor_model.get_weights()[i])))
+                weights_sum[i] = abs(np.sum(actor_model.get_weights()[i]))
+            with weights_writer0.as_default():
+                tf.summary.scalar('weight0', weights_sum[0], step=ep*100 + counter)
+            with weights_writer1.as_default():
+                tf.summary.scalar('weight0', weights_sum[1], step=ep*100 + counter)
+            with weights_writer2.as_default():
+                tf.summary.scalar('weight0', weights_sum[2], step=ep*100 + counter)
+            with weights_writer3.as_default():
+                tf.summary.scalar('weight0', weights_sum[3], step=ep*100 + counter)
+            with weights_writer4.as_default():
+                tf.summary.scalar('weight0', weights_sum[4], step=ep*100 + counter)
+            with weights_writer5.as_default():
+                tf.summary.scalar('weight0', weights_sum[5], step=ep*100 + counter)
 
         # Record events and update models
         buffer.record((prev_state, action, reward, state))
