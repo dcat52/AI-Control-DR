@@ -136,26 +136,42 @@ class Critic_Model(tf.keras.Model):
         
 class AC_Agent:
     def __init__(self, env, args):
+
+        self.args = args
+        args = vars(args)
+
         self.env = env
 
-        self.SAVE_FREQ =50
-        self.BATCH_SIZE = 64
+        # --------------------------------------
+        # NOTE: These parameters are overwritten when run by `main.py`
+        self.SAVE_FREQ = 50
+        self.BATCH_SIZE = 32
+        self.BUFFER_CAPACITY = 10000
         self.NUM_EPISODES = 1000
         self.TARGET_UPDATE = 10
         self.TAU = 0.2
         self.GAMMA = 0.99
         self.STD_DEV = 0.1
+        self.SAVE_DIR = "weights"
+        self.ACTOR_LR = 0.0001
+        self.CRITIC_LR = 0.0002
+        # --------------------------------------
 
-        self.START = 1.0
-        self.END = 0.025
-        self.DECAY = (self.START-self.END) / self.NUM_EPISODES
+        # self.START = 1.0
+        # self.END = 0.025
+        # self.DECAY = (self.START - self.END) / self.NUM_EPISODES
 
-        self.state_length = 6
+        # parse args and override previous variables
+        for k, v in args.items():
+            # using exec like this is not recommended but works
+            exec("self." + k + " = " + str(v))
+
+        state = self.env.reset()
+
+        self.state_length = state.shape[0]
         self.action_length = 2
         self.action_bounds = (-1.0, 1.0)
         self.lower_bound, self.upper_bound = self.action_bounds
-
-        self.eps = self.EPS_START
 
         self.ou_noise = OUActionNoise(mean=np.zeros(1), std_deviation=float(self.STD_DEV) * np.ones(1))
 
@@ -166,10 +182,10 @@ class AC_Agent:
 
         self.update_targets(tau=1.0)
 
-        self.actor_optimizer = optimizers.Adam()
-        self.critic_optimizer = optimizers.Adam()
+        self.actor_optimizer = optimizers.Adam(learning_rate=self.ACTOR_LR)
+        self.critic_optimizer = optimizers.Adam(learning_rate=self.CRITIC_LR)
 
-        self.buffer = Buffer(capacity=10000)
+        self.buffer = Buffer(capacity=self.BUFFER_CAPACITY)
 
         self.steps_done = 0
         self.episode_durations = []
@@ -247,10 +263,10 @@ class AC_Agent:
                 i_episode, episodic_reward, avg_reward
                 ))
 
-            self.ou_noise.set_std_dev(self.ou_noise.get_std_dev() - self.DECAY)
+            # self.ou_noise.set_std_dev(self.ou_noise.get_std_dev() - self.DECAY)
 
             if i_episode % self.SAVE_FREQ == 0:
-                self.save_weights("weights", i_episode)
+                self.save_weights(self.SAVE_DIR, i_episode)
 
         # Plotting graph
         # Episodes versus Avg. Rewards
