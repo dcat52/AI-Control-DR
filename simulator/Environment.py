@@ -63,7 +63,7 @@ class Environment:
     # TODO: establish reward, return reward and some other thigns
         # result = self._make_action(action)
 
-        if self._render:
+        if self.render_env:
             self._process_keyboard()
         self.step_count += 1
 
