@@ -34,11 +34,11 @@ class Environment:
 
         # pygame
         pygame.init()
-        self.screen = pygame.display.set_mode((600, 600))
+        if render:
+            self.screen = pygame.display.set_mode((600, 600))
+            self.draw_options = pymunk.pygame_util.DrawOptions(self.screen)
+            self.space.debug_draw(self.draw_options)
         self.clock = pygame.time.Clock()
-
-        self.draw_options = pymunk.pygame_util.DrawOptions(self.screen)
-        self.space.debug_draw(self.draw_options)
 
         # Static barrier walls (lines) that the balls bounce off of
         self._add_static_scenery()
@@ -63,7 +63,8 @@ class Environment:
     # TODO: establish reward, return reward and some other thigns
         # result = self._make_action(action)
 
-        self._process_keyboard()
+        if self._render:
+            self._process_keyboard()
         self.step_count += 1
 
         self.agent.set_motors(action)
@@ -77,7 +78,6 @@ class Environment:
             self._draw_objects()
             pygame.display.flip()
             self.clock.tick(50)
-            pygame.display.set_caption("fps: " + str(self.clock.get_fps()))
 
         if self.render_env and self.step_count % self.render_step == 0:
             self._render()
@@ -153,6 +153,9 @@ class Environment:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_PERIOD:
                 self.render_step = min(self.render_step+1, 10)
                 print("Render step is {}".format(self.render_step))
+
+    def set_not_running(self):
+        self.running = False
 
     def _render(self) -> None:
         self._clear_screen()
