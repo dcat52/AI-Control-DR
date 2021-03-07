@@ -134,3 +134,7 @@ dmypy.json
 
 # Model weights
 weights/
+runs/
+
+# Singularity
+*.sif
