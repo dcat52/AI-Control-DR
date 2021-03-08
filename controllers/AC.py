@@ -1,5 +1,4 @@
 import shutil
-
 from keras.constraints import maxnorm
 from tensorflow.keras import layers
 import numpy as np
@@ -7,12 +6,17 @@ from simulator.Environment import Environment
 import datetime
 import tensorflow as tf
 import matplotlib.pyplot as plt
+import controllers.TBLogger as tb
 
-twatch = True
+twatch = False
 tboard = True
 
 if twatch:
     import tensorwatch as tw
+if tboard:
+    import sys
+    sys.path.append('../')
+    logger = tb.TBLogger()
 
 env = Environment(robot_start=(300, 300), goal=(400, 400), goal_threshold=20, render=True)
 
@@ -248,32 +252,10 @@ if twatch:
     actor_weights_stream5 = w.create_stream('actor_weights5')
     # critic_weights_stream = w.create_stream('critic_weights')
 
-# TensorBoard
-if tboard:
-    log_dir = "logs/fit/"
-    log_dir_actor_weights = "logs/weights/actor"
-    log_dir_critic_weights = "logs/weights/critic"
-    summary_writer = tf.summary.create_file_writer(logdir=log_dir)
-    actor_xpos_writer = tf.summary.create_file_writer(logdir=log_dir_actor_weights+'x_pos')
-    actor_ypos_writer = tf.summary.create_file_writer(logdir=log_dir_actor_weights+'y_pos')
-    actor_thet_writer = tf.summary.create_file_writer(logdir=log_dir_actor_weights+'theta')
-    actor_xvel_writer = tf.summary.create_file_writer(logdir=log_dir_actor_weights+'x_vel')
-    actor_yvel_writer = tf.summary.create_file_writer(logdir=log_dir_actor_weights+'y_vel')
-    actor_tvel_writer = tf.summary.create_file_writer(logdir=log_dir_actor_weights+'theta_vel')
-
-    critic_xpos_writer = tf.summary.create_file_writer(logdir=log_dir_critic_weights+'x_pos')
-    critic_ypos_writer = tf.summary.create_file_writer(logdir=log_dir_critic_weights+'y_pos')
-    critic_thet_writer = tf.summary.create_file_writer(logdir=log_dir_critic_weights+'theta')
-    critic_xvel_writer = tf.summary.create_file_writer(logdir=log_dir_critic_weights+'x_vel')
-    critic_yvel_writer = tf.summary.create_file_writer(logdir=log_dir_critic_weights+'y_vel')
-    critic_tvel_writer = tf.summary.create_file_writer(logdir=log_dir_critic_weights+'theta_vel')
-
-weights_sum = [1,1,1,1,1,1]
 for ep in range(total_episodes):
     prev_state = env.reset()
     episodic_reward = 0
     counter = 0
-    summary_writer.flush()
     while True:
         tf_prev_state = tf.expand_dims(tf.convert_to_tensor(prev_state), 0)
         action = policy(tf_prev_state, ou_noise)
@@ -286,59 +268,13 @@ for ep in range(total_episodes):
         ## TensorWatch
         if twatch:
             rewards_stream.write((counter, reward))
-            layer = actor_model.get_weights()[0]
-            for i in range(len(layer)):
-                # weights_sum.append(abs(np.sum(actor_model.get_weights()[i])))
-                weights_sum[i] = abs(np.sum(actor_model.get_weights()[i]))
-            actor_weights_stream0.write(weights_sum[0])
-            actor_weights_stream1.write((weights_sum[1]))
-            actor_weights_stream2.write((weights_sum[2]))
-            actor_weights_stream3.write((weights_sum[3]))
-            actor_weights_stream4.write((weights_sum[4]))
-            actor_weights_stream5.write((weights_sum[5]))
-            # critic_weights_stream.write((counter, critic_model.get_weights()))
+
 
         # TensorBoard
         if tboard:
-            # print(state)
-            # constant reward feed
-            with summary_writer.as_default():
-                tf.summary.flush()
-                tf.summary.scalar('reward', reward, step=counter)
-            # actor_model input weights feed
-            input_layer = actor_model.get_weights()[0]
-            for i in range(len(input_layer)):
-                # weights_sum.append(abs(np.sum(actor_model.get_weights()[i])))
-                weights_sum[i] = abs(np.sum(actor_model.get_weights()[i]))
-            with actor_xpos_writer.as_default():
-                tf.summary.scalar('actor input weights', weights_sum[0], step=ep*100 + counter)
-            with actor_ypos_writer.as_default():
-                tf.summary.scalar('actor input weights', weights_sum[1], step=ep*100 + counter)
-            with actor_thet_writer.as_default():
-                tf.summary.scalar('actor input weights', weights_sum[2], step=ep*100 + counter)
-            with actor_xvel_writer.as_default():
-                tf.summary.scalar('actor input weights', weights_sum[3], step=ep*100 + counter)
-            with actor_yvel_writer.as_default():
-                tf.summary.scalar('actor input weights', weights_sum[4], step=ep*100 + counter)
-            with actor_tvel_writer.as_default():
-                tf.summary.scalar('actor input weights', weights_sum[5], step=ep*100 + counter)
-            # actor_model input weights feed
-            input_layer = critic_model.get_weights()[0]
-            for i in range(len(input_layer)):
-                # weights_sum.append(abs(np.sum(actor_model.get_weights()[i])))
-                weights_sum[i] = abs(np.sum(actor_model.get_weights()[i]))
-            with critic_xpos_writer.as_default():
-                tf.summary.scalar('critic input weights', weights_sum[0], step=ep*100 + counter)
-            with critic_ypos_writer.as_default():
-                tf.summary.scalar('critic input weights', weights_sum[1], step=ep*100 + counter)
-            with critic_thet_writer.as_default():
-                tf.summary.scalar('critic input weights', weights_sum[2], step=ep*100 + counter)
-            with critic_xvel_writer.as_default():
-                tf.summary.scalar('critic input weights', weights_sum[3], step=ep*100 + counter)
-            with critic_yvel_writer.as_default():
-                tf.summary.scalar('critic input weights', weights_sum[4], step=ep*100 + counter)
-            with critic_tvel_writer.as_default():
-                tf.summary.scalar('critic input weights', weights_sum[5], step=ep*100 + counter)
+            # actor and critic model input weights logging
+            logger.weights_logger(actor_model.get_weights()[0], critic_model.get_weights()[0], ep*100+counter)
+
 
         # Record events and update models
         buffer.record((prev_state, action, reward, state))
@@ -360,8 +296,7 @@ for ep in range(total_episodes):
         ep_rewards_stream.write((ep, episodic_reward))
     # TensorBoard
     if tboard:
-        with summary_writer.as_default():
-            tf.summary.scalar('episodic_reward', episodic_reward, step=ep)
+        logger.rewards_logger(episodic_reward, ep)
 
     # Mean of last 40 episodes
     avg_reward = np.mean(ep_reward_list[-10:])
