@@ -6,7 +6,6 @@ from simulator.Environment import Environment
 import datetime
 import tensorflow as tf
 import matplotlib.pyplot as plt
-import controllers.TBLogger as tb
 
 twatch = False
 tboard = True
@@ -14,8 +13,7 @@ tboard = True
 if twatch:
     import tensorwatch as tw
 if tboard:
-    import sys
-    sys.path.append('../')
+    import controllers.TBLogger as tb
     logger = tb.TBLogger()
 
 env = Environment(robot_start=(300, 300), goal=(400, 400), goal_threshold=20, render=True)
