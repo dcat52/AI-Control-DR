@@ -13,6 +13,8 @@ def parse():
     parser.add_argument('-r', '--render', action='store_true', help='Whether to render')
 
     # model settings
+    parser.add_argument('--print_freq', dest="PRINT_FREQ", default=1, type=int, help='How often to print information to std out')
+    parser.add_argument('--write_freq', dest="WRITE_FREQ", default=5, type=int, help='How often to save information to disk')
     parser.add_argument('--save_freq', dest="SAVE_FREQ", default=50, type=int, help='Save model weights every n iterations')
     parser.add_argument('--batch_size', dest="BATCH_SIZE", default=32, type=int, help='Batch size')
     parser.add_argument('--buffer_capacity', dest="BUFFER_CAPACITY", default=10000, type=int, help='Buffer capacity')
@@ -21,9 +23,10 @@ def parse():
     parser.add_argument('--tau', dest="TAU", default=0.2, type=float, help='Update ratio of target network')
     parser.add_argument('--gamma', dest="GAMMA", default=0.99, type=float, help='Future reward decay')
     parser.add_argument('--std', dest="STD_DEV", default=0.1, type=float, help='Standard deviation of noise')
-    parser.add_argument('--save_dir', dest="SAVE_DIR", default="weights", type=str, help='Location to save weights')
+    parser.add_argument('--save_prefix', dest="SAVE_PREFIX", default="data", type=str, help='Prefix of location to save content')
     parser.add_argument('--actor_lr', dest="ACTOR_LR", default=0.0001, type=float, help='Learning rate for the actor')
     parser.add_argument('--critic_lr', dest="CRITIC_LR", default=0.0002, type=float, help='Learning rate for the critic')
+    parser.add_argument('--plot', dest="PLOT", action='store_true', help='Whether to plot data')
 
     # environment settings
     parser.add_argument('--start_loc', default=[300, 300], nargs='+', type=int, help='Start location in format --start_loc x y')
@@ -37,7 +40,7 @@ def parse():
 
     args.start_loc = tuple(args.start_loc)
     args.goal_loc = tuple(args.goal_loc)
-    args.SAVE_DIR = "'{}'".format(args.SAVE_DIR)
+    args.SAVE_PREFIX = "'{}'".format(args.SAVE_PREFIX)
     args.log_level = (5 - args.log_level) * 10
     print("Modified args:", args)
     return args

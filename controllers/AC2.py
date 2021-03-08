@@ -144,6 +144,8 @@ class AC_Agent:
 
         # --------------------------------------
         # NOTE: These parameters are overwritten when run by `main.py`
+        self.PRINT_FREQ = 1
+        self.WRITE_FREQ = 5
         self.SAVE_FREQ = 50
         self.BATCH_SIZE = 32
         self.BUFFER_CAPACITY = 10000
@@ -152,9 +154,10 @@ class AC_Agent:
         self.TAU = 0.2
         self.GAMMA = 0.99
         self.STD_DEV = 0.1
-        self.SAVE_DIR = "weights"
+        self.SAVE_PREFIX = "data"
         self.ACTOR_LR = 0.0001
         self.CRITIC_LR = 0.0002
+        self.PLOT = True
         # --------------------------------------
 
         # self.START = 1.0
@@ -192,10 +195,10 @@ class AC_Agent:
 
     def save_weights(self, directory: str, i: int):
         print("Saving model weights.")
-        self.policy_actor_net.save_weights("{}/policy_actor_net_{:3d}".format(directory, i))
-        self.policy_critic_net.save_weights("{}/policy_critic_net_{:3d}".format(directory, i))
-        self.target_actor_net.save_weights("{}/target_actor_net_{:3d}".format(directory, i))
-        self.target_critic_net.save_weights("{}/target_critic_net_{:3d}".format(directory, i))
+        self.policy_actor_net.save_weights("{}/policy_actor_net_{:03d}".format(directory, i))
+        self.policy_critic_net.save_weights("{}/policy_critic_net_{:03d}".format(directory, i))
+        self.target_actor_net.save_weights("{}/target_actor_net_{:03d}".format(directory, i))
+        self.target_critic_net.save_weights("{}/target_critic_net_{:03d}".format(directory, i))
 
     def make_action(self, state, test=True):
 
@@ -252,28 +255,34 @@ class AC_Agent:
 
             final_episode_reward.append(reward)
             cumulative_episode_reward.append(episodic_reward)
+
+            if i_episode % self.PRINT_FREQ == 0:
+                # Mean of last 40 episodes
+                avg_reward = np.mean(cumulative_episode_reward[-10:])
+                print("Episode: {:3d} -- Current Reward: {:9.2f} -- Avg Reward is: {:9.2f}".format(
+                    i_episode, episodic_reward, avg_reward
+                    ))
+
+            if i_episode % self.WRITE_FREQ == 0:
+                # TODO: Write desired features (i_episode, reward, etc) to disk
+                with open(self.SAVE_PREFIX + "_values.csv", "a") as f:
+                    f.write("{},{}\n".format(i_episode, reward))
+                pass
                 
             # Update the target network
             if i_episode % self.TARGET_UPDATE == 0:
                 self.update_targets()
 
-            # Mean of last 40 episodes
-            avg_reward = np.mean(cumulative_episode_reward[-10:])
-            print("Episode: {:3d} -- Current Reward: {:9.2f} -- Avg Reward is: {:9.2f}".format(
-                i_episode, episodic_reward, avg_reward
-                ))
-
-            # self.ou_noise.set_std_dev(self.ou_noise.get_std_dev() - self.DECAY)
-
             if i_episode % self.SAVE_FREQ == 0:
-                self.save_weights(self.SAVE_DIR, i_episode)
+                self.save_weights(self.SAVE_PREFIX + "_weights", i_episode)
 
-        # Plotting graph
-        # Episodes versus Avg. Rewards
-        plt.plot(cumulative_episode_reward)
-        plt.xlabel("Episode")
-        plt.ylabel("Avg. Epsiodic Reward")
-        plt.show()
+        if self.PLOT:
+            # Plotting graph
+            # Episodes versus Avg. Rewards
+            plt.plot(cumulative_episode_reward)
+            plt.xlabel("Episode")
+            plt.ylabel("Avg. Epsiodic Reward")
+            plt.show()
     
 
     @tf.function
