@@ -21,12 +21,6 @@ random.seed(595)
 Transition = namedtuple('Transition',
                         ('state', 'action', 'next_state', 'reward'))
 
-# Flag for TensorBoard logging
-tboard = True
-if tboard:
-    import controllers.TBLogger as tb
-    logger = tb.TBLogger()
-
 class OUActionNoise:
     def __init__(self, mean, std_deviation, theta=0.15, dt=1e-2, x_initial=None):
         self.theta = theta
@@ -150,6 +144,7 @@ class AC_Agent:
 
         # --------------------------------------
         # NOTE: These parameters are overwritten when run by `main.py`
+        # NOTE: The defaults in `main.py` may vary from the defaults here
         self.PRINT_FREQ = 1
         self.WRITE_FREQ = 5
         self.SAVE_FREQ = 50
@@ -164,16 +159,22 @@ class AC_Agent:
         self.ACTOR_LR = 0.0001
         self.CRITIC_LR = 0.0002
         self.PLOT = True
+        self.TENSORBOARD = True
         # --------------------------------------
 
         # self.START = 1.0
         # self.END = 0.025
         # self.DECAY = (self.START - self.END) / self.NUM_EPISODES
 
+        # NOTE: This is where the `main.py` overrides variables
         # parse args and override previous variables
         for k, v in args.items():
             # using exec like this is not recommended but works
             exec("self." + k + " = " + str(v))
+
+        if self.TENSORBOARD:
+            import controllers.TBLogger as tb
+            self.tb_logger = tb.TBLogger(self.SAVE_PREFIX)
 
         state = self.env.reset()
 
@@ -245,14 +246,14 @@ class AC_Agent:
                 episodic_reward += reward
 
                 # TensorBoard
-                if tboard:
+                if self.TENSORBOARD:
                     # actor and critic model input weights logging
                     try:
-                        logger.weights_logger(self.policy_actor_net.get_weights()[0],
-                                              self.policy_critic_net.get_weights()[0],
-                                              self.target_actor_net.get_weights()[0],
-                                              self.target_actor_net.get_weights()[0],
-                                              i_episode * 100 + counter)
+                        self.tb_logger.weights_logger(self.policy_actor_net.get_weights()[0],
+                                                      self.policy_critic_net.get_weights()[0],
+                                                      self.target_actor_net.get_weights()[0],
+                                                      self.target_actor_net.get_weights()[0],
+                                                      i_episode * 100 + counter)
                     except IndexError:
                         print('something has no weights for some reason')
 
@@ -275,14 +276,9 @@ class AC_Agent:
             cumulative_episode_reward.append(episodic_reward)
 
             # TensorBoard logging for episodic reward
-            if tboard:
-                logger.rewards_logger(episodic_reward, i_episode)
+            if self.TENSORBOARD:
+                self.tb_logger.rewards_logger(episodic_reward, i_episode)
 
-            # Mean of last 40 episodes
-            avg_reward = np.mean(cumulative_episode_reward[-10:])
-            print("Episode: {:3d} -- Current Reward: {:9.2f} -- Avg Reward is: {:9.2f}".format(
-                i_episode, episodic_reward, avg_reward
-                ))
             if i_episode % self.PRINT_FREQ == 0:
                 # Mean of last 40 episodes
                 avg_reward = np.mean(cumulative_episode_reward[-10:])

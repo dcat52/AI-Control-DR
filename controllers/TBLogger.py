@@ -3,9 +3,10 @@ import numpy as np
 import tensorflow as tf
 
 class TBLogger:
-    def __init__(self):
+    def __init__(self, directory_prefix="data"):
         # log directory locations
-        log_dir = "logs/" + datetime.datetime.now().strftime("%Y%m%d-%H%M")
+        # log_dir = directory_prefix + "logs/" + datetime.datetime.now().strftime("%Y%m%d-%H%M")
+        log_dir = directory_prefix + "_logs/"
 
         log_dir_policy_weights = log_dir + "/weights/policy"
         log_dir_target_weights = log_dir + "/weights/target"
