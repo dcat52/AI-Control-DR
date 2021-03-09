@@ -3,6 +3,8 @@ import sys
 import math
 import random
 import queue
+import datetime
+import logging
 from collections import deque, namedtuple
 from itertools import count
 
@@ -144,7 +146,7 @@ class AC_Agent:
 
         # --------------------------------------
         # NOTE: These parameters are overwritten when run by `main.py`
-        # NOTE: The defaults in `main.py` may vary from the defaults here
+        # NOTE: The defaults here match those by `main.py`
         self.PRINT_FREQ = 1
         self.WRITE_FREQ = 5
         self.SAVE_FREQ = 50
@@ -158,8 +160,9 @@ class AC_Agent:
         self.SAVE_PREFIX = "data"
         self.ACTOR_LR = 0.0001
         self.CRITIC_LR = 0.0002
-        self.PLOT = True
-        self.TENSORBOARD = True
+        self.PLOT = False
+        self.TENSORBOARD = False
+        self.DATE_IN_PREFIX = False
         # --------------------------------------
 
         # self.START = 1.0
@@ -171,6 +174,17 @@ class AC_Agent:
         for k, v in args.items():
             # using exec like this is not recommended but works
             exec("self." + k + " = " + str(v))
+
+        if self.DATE_IN_PREFIX:
+            self.DATE = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+            self.SAVE_PREFIX += "_{}".format(self.DATE)
+            logging.info("********************************")
+            logging.info("********************************")
+            logging.info("Using date in save directory prefix!")
+            logging.info("The date is: {}".format(self.DATE))
+            logging.info("The complete prefix is: ./{}*".format(self.SAVE_PREFIX))
+            logging.info("********************************")
+            logging.info("********************************")
 
         if self.TENSORBOARD:
             import controllers.TBLogger as tb

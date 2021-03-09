@@ -28,6 +28,7 @@ def parse():
     parser.add_argument('--critic_lr',      dest="CRITIC_LR",       default=0.0002, type=float, help='Learning rate for the critic')
     parser.add_argument('--plot',           dest="PLOT",            action='store_true',        help='Whether to plot data')
     parser.add_argument('--tensorboard',    dest="TENSORBOARD",     action='store_true',        help='Whether to use tensorboard')
+    parser.add_argument('--date',           dest="DATE_IN_PREFIX",  action='store_true',        help='Use the date in the prefix string (appended as _20210314_180101)')
 
     # environment settings
     parser.add_argument('--start_loc',      default=[300, 300], nargs='+', type=int,    help='Start location in format --start_loc x y')
