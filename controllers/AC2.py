@@ -241,7 +241,7 @@ class AC_Agent:
         final_episode_reward = []
         cumulative_episode_reward = []
 
-        for i_episode in range(self.NUM_EPISODES):
+        for i_episode in range(1, self.NUM_EPISODES+1):
 
             state = self.env.reset()
             episodic_reward = 0
@@ -303,7 +303,7 @@ class AC_Agent:
             if i_episode % self.WRITE_FREQ == 0:
                 # TODO: Write desired features (i_episode, reward, etc) to disk
                 with open(self.SAVE_PREFIX + "_values.csv", "a") as f:
-                    f.write("{},{}\n".format(i_episode, reward))
+                    f.write("{},{}\n".format(i_episode, episodic_reward))
                 pass
 
             # Update the target network
