@@ -3,6 +3,6 @@ From: python:3.8
 
 %post
     pip3 install requests argparse
-    pip3 install numpy=1.18.5 pandas matplotlib
+    pip3 install numpy==1.18.5 pandas matplotlib
     pip3 install 'tensorflow>=2.3.0,<2.4.0'
 
