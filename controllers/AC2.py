@@ -14,7 +14,7 @@ from tensorflow import nn
 import numpy as np
 import matplotlib.pyplot as plt
 
-np.set_printoptions(precision=2)
+np.set_printoptions(precision=2, linewidth=180)
 
 # tf.manual_seed(595)
 np.random.seed(595)
@@ -78,7 +78,7 @@ class Buffer(object):
         return len(self.memory)
 
 class Actor_Model(tf.keras.Model):
-    def __init__(self, action_bounds=(-1.0, 1.0), state_length=6, action_length=2):
+    def __init__(self, action_bounds=(-1.0, 1.0), state_length=6, action_length=2, num_layers=2, layer_width=256):
         super(Actor_Model, self).__init__()
 
         self.lower_bound, self.upper_bound = action_bounds
@@ -86,17 +86,30 @@ class Actor_Model(tf.keras.Model):
         # Initialize weights between -3e-3 and 3-e3
         self.last_init = tf.random_uniform_initializer(minval=-0.003, maxval=0.003)
 
+        self.hl = []
+
         # self.inp = layers.Input(shape=(state_length,))
         self.inp = layers.Dense(state_length, activation=nn.relu)
-        self.hl1 = layers.Dense(256, activation=nn.relu)
-        self.hl2 = layers.Dense(256, activation=nn.relu)
+        for i in range(num_layers):
+            layer = layers.Dense(layer_width, activation=nn.relu)
+            self.hl.append(layer)
+        # self.hl2 = layers.Dense(256, activation=nn.relu)
         self.out = layers.Dense(action_length, activation=nn.tanh, kernel_initializer=self.last_init)
 
     def call(self, inputs):
         s1 = self.inp(inputs)
-        s2 = self.hl1(s1)
-        s3 = self.hl2(s2)
-        s4 = self.out(s3)
+
+        temp = s1
+
+        for i in range(len(self.hl)):
+            temp = self.hl[i](temp)
+
+        if(len(self.hl) == 0):
+            hl_out = s1
+
+        # s2 = self.hl1(s1)
+        # s3 = self.hl2(s2)
+        s4 = self.out(temp)
         s5 = s4 * self.upper_bound
         return s5
 
@@ -163,6 +176,8 @@ class AC_Agent:
         self.PLOT = False
         self.TENSORBOARD = False
         self.DATE_IN_PREFIX = False
+        self.ACTOR_NUM_LAYERS = 2
+        self.ACTOR_LAYER_WIDTH = 256
         # --------------------------------------
 
         # self.START = 1.0
@@ -199,9 +214,9 @@ class AC_Agent:
 
         self.ou_noise = OUActionNoise(mean=np.zeros(1), std_deviation=float(self.STD_DEV) * np.ones(1))
 
-        self.policy_actor_net = Actor_Model()
+        self.policy_actor_net = Actor_Model(num_layers=self.ACTOR_NUM_LAYERS, layer_width=self.ACTOR_LAYER_WIDTH)
         self.policy_critic_net = Critic_Model()
-        self.target_actor_net = Actor_Model()
+        self.target_actor_net = Actor_Model(num_layers=self.ACTOR_NUM_LAYERS, layer_width=self.ACTOR_LAYER_WIDTH)
         self.target_critic_net = Critic_Model()
 
         self.update_targets(tau=1.0)
@@ -322,7 +337,7 @@ class AC_Agent:
             plt.show()
     
 
-    @tf.function
+    # @tf.function
     def update(self, state_batch, action_batch, reward_batch, next_state_batch,):
         # Training and updating Actor & Critic networks.
         # See Pseudo Code.
