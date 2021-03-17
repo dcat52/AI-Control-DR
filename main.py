@@ -23,6 +23,7 @@ def parse():
     parser.add_argument('--tau',            dest="TAU",             default=0.2, type=float,    help='Update ratio of target network')
     parser.add_argument('--gamma',          dest="GAMMA",           default=0.99, type=float,   help='Future reward decay')
     parser.add_argument('--std',            dest="STD_DEV",         default=0.1, type=float,    help='Standard deviation of noise')
+    parser.add_argument('--theta',          dest="THETA",           default=0.15, type=float,    help='Theta of noise')
     parser.add_argument('--save_prefix',    dest="SAVE_PREFIX",     default="data", type=str,   help='Prefix of location to save content')
     parser.add_argument('--actor_lr',       dest="ACTOR_LR",        default=0.0001, type=float, help='Learning rate for the actor')
     parser.add_argument('--critic_lr',      dest="CRITIC_LR",       default=0.0002, type=float, help='Learning rate for the critic')
