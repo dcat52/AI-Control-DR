@@ -15,6 +15,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 np.set_printoptions(precision=2, linewidth=180)
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 # tf.manual_seed(595)
 np.random.seed(595)
@@ -24,7 +25,7 @@ Transition = namedtuple('Transition',
                         ('state', 'action', 'next_state', 'reward'))
 
 class OUActionNoise:
-    def __init__(self, mean, std_deviation, theta=0.15, dt=1e-2, x_initial=None):
+    def __init__(self, mean, std_deviation, theta=0.15, dt=2e-2, x_initial=None):
         self.theta = theta
         self.mean = mean
         self.std_dev = std_deviation
@@ -32,6 +33,7 @@ class OUActionNoise:
         self.x_initial = x_initial
         self.reset()
 
+    # @tf.function
     def __call__(self):
         # Formula taken from https://www.wikipedia.org/wiki/Ornstein-Uhlenbeck_process.
         x = (
@@ -96,6 +98,7 @@ class Actor_Model(tf.keras.Model):
         # self.hl2 = layers.Dense(256, activation=nn.relu)
         self.out = layers.Dense(action_length, activation=nn.tanh, kernel_initializer=self.last_init)
 
+    @tf.function
     def call(self, inputs):
         s1 = self.inp(inputs)
 
@@ -134,6 +137,7 @@ class Critic_Model(tf.keras.Model):
         self.combined_hl2 = layers.Dense(256, activation=nn.relu)
         self.out = layers.Dense(1)
 
+    @tf.function
     def call(self, inputs):
         ss1 = self.state_input(inputs[0])
         ss2 = self.state_hl1(ss1)
@@ -170,6 +174,7 @@ class AC_Agent:
         self.TAU = 0.2
         self.GAMMA = 0.99
         self.STD_DEV = 0.1
+        self.THETA = 0.15
         self.SAVE_PREFIX = "data"
         self.ACTOR_LR = 0.0001
         self.CRITIC_LR = 0.0002
@@ -212,7 +217,7 @@ class AC_Agent:
         self.action_bounds = (-1.0, 1.0)
         self.lower_bound, self.upper_bound = self.action_bounds
 
-        self.ou_noise = OUActionNoise(mean=np.zeros(1), std_deviation=float(self.STD_DEV) * np.ones(1))
+        self.ou_noise = OUActionNoise(mean=np.zeros(1), std_deviation=float(self.STD_DEV) * np.ones(1), theta=float(self.THETA) * np.ones(1))
 
         self.policy_actor_net = Actor_Model(num_layers=self.ACTOR_NUM_LAYERS, layer_width=self.ACTOR_LAYER_WIDTH)
         self.policy_critic_net = Critic_Model()
@@ -337,7 +342,7 @@ class AC_Agent:
             plt.show()
     
 
-    # @tf.function
+    @tf.function
     def update(self, state_batch, action_batch, reward_batch, next_state_batch,):
         # Training and updating Actor & Critic networks.
         # See Pseudo Code.
