@@ -4,6 +4,8 @@ from simulator.Environment import Environment
 
 env = Environment(robot_start=(300, 300), goal=(400, 400))
 
+import numpy as np
+np.set_printoptions(precision=2, linewidth=180)
 class Keyboard_Controller:
     def __init__(self, MODE):
         self.left = 0
@@ -11,7 +13,9 @@ class Keyboard_Controller:
         self.running = True
 
         self.MODE = MODE
+        self.max_s = [-9E9 for i in range(6)]
         self.loop()
+
 
     def loop(self):
         while self.running:
@@ -19,7 +23,14 @@ class Keyboard_Controller:
             self.process_keys()
 
             state = env.step((self.left, self.right))
-            print(state)
+            s = state[0]
+            for i in range(0,6):
+                if s[i] > self.max_s[i]:
+                    self.max_s[i] = s[i]
+
+            print(s, self.max_s)
+
+
             
             self.left = 0
             self.right = 0
