@@ -128,13 +128,26 @@ dmypy.json
 # Pyre type checker
 .pyre/
 
+# Photo files
+*.png
+*.PNG
+*.jpg
+*.JPG
+*.JPEG
+
 # Video files
 *.mkv
 *.mp4
 
+# Numpy
+*.npy
+
 # Model weights
 weights/
 runs/
+
+# Other
+*.csv
 
 # Singularity
 *.sif

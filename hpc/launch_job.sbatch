@@ -5,11 +5,12 @@
 #SBATCH --partition=short
 #SBATCH --mail-user dscatherman@wpi.edu
 #SBATCH --mail-type=end
-###SBATCH --mem 16G
+#SBATCH --mem-per-cpu=3G
 #SBATCH --time=24:00:00
-#SBATCH --nodes=3
-#SBATCH --ntasks-per-node=8
-#SBATCH --cpus-per-task=4
+#SBATCH --nodes=8
+#SBATCH --ntasks-per-node=20
+#SBATCH --cpus-per-task=2
+#SBATCH --mincpus=40
 
 time=`date +%Y.%m.%d__%H.%M.%S`
 store_dir=./runs/${time}
