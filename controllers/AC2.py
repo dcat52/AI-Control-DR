@@ -14,7 +14,8 @@ from tensorflow import nn
 import numpy as np
 import matplotlib.pyplot as plt
 
-np.set_printoptions(precision=2)
+np.set_printoptions(precision=2, linewidth=180)
+tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
 # tf.manual_seed(595)
 np.random.seed(595)
@@ -24,7 +25,7 @@ Transition = namedtuple('Transition',
                         ('state', 'action', 'next_state', 'reward'))
 
 class OUActionNoise:
-    def __init__(self, mean, std_deviation, theta=0.15, dt=1e-2, x_initial=None):
+    def __init__(self, mean, std_deviation, theta=0.15, dt=2e-2, x_initial=None):
         self.theta = theta
         self.mean = mean
         self.std_dev = std_deviation
@@ -32,6 +33,7 @@ class OUActionNoise:
         self.x_initial = x_initial
         self.reset()
 
+    # @tf.function
     def __call__(self):
         # Formula taken from https://www.wikipedia.org/wiki/Ornstein-Uhlenbeck_process.
         x = (
@@ -78,7 +80,7 @@ class Buffer(object):
         return len(self.memory)
 
 class Actor_Model(tf.keras.Model):
-    def __init__(self, action_bounds=(-1.0, 1.0), state_length=6, action_length=2):
+    def __init__(self, action_bounds=(-1.0, 1.0), state_length=6, action_length=2, num_layers=2, layer_width=256):
         super(Actor_Model, self).__init__()
 
         self.lower_bound, self.upper_bound = action_bounds
@@ -86,17 +88,31 @@ class Actor_Model(tf.keras.Model):
         # Initialize weights between -3e-3 and 3-e3
         self.last_init = tf.random_uniform_initializer(minval=-0.003, maxval=0.003)
 
+        self.hl = []
+
         # self.inp = layers.Input(shape=(state_length,))
         self.inp = layers.Dense(state_length, activation=nn.relu)
-        self.hl1 = layers.Dense(256, activation=nn.relu)
-        self.hl2 = layers.Dense(256, activation=nn.relu)
+        for i in range(num_layers):
+            layer = layers.Dense(layer_width, activation=nn.relu)
+            self.hl.append(layer)
+        # self.hl2 = layers.Dense(256, activation=nn.relu)
         self.out = layers.Dense(action_length, activation=nn.tanh, kernel_initializer=self.last_init)
 
+    @tf.function
     def call(self, inputs):
         s1 = self.inp(inputs)
-        s2 = self.hl1(s1)
-        s3 = self.hl2(s2)
-        s4 = self.out(s3)
+
+        temp = s1
+
+        for i in range(len(self.hl)):
+            temp = self.hl[i](temp)
+
+        if(len(self.hl) == 0):
+            hl_out = s1
+
+        # s2 = self.hl1(s1)
+        # s3 = self.hl2(s2)
+        s4 = self.out(temp)
         s5 = s4 * self.upper_bound
         return s5
 
@@ -121,6 +137,7 @@ class Critic_Model(tf.keras.Model):
         self.combined_hl2 = layers.Dense(256, activation=nn.relu)
         self.out = layers.Dense(1)
 
+    @tf.function
     def call(self, inputs):
         ss1 = self.state_input(inputs[0])
         ss2 = self.state_hl1(ss1)
@@ -157,12 +174,15 @@ class AC_Agent:
         self.TAU = 0.2
         self.GAMMA = 0.99
         self.STD_DEV = 0.1
+        self.THETA = 0.15
         self.SAVE_PREFIX = "data"
         self.ACTOR_LR = 0.0001
         self.CRITIC_LR = 0.0002
         self.PLOT = False
         self.TENSORBOARD = False
         self.DATE_IN_PREFIX = False
+        self.ACTOR_NUM_LAYERS = 2
+        self.ACTOR_LAYER_WIDTH = 256
         # --------------------------------------
 
         # self.START = 1.0
@@ -197,11 +217,11 @@ class AC_Agent:
         self.action_bounds = (-1.0, 1.0)
         self.lower_bound, self.upper_bound = self.action_bounds
 
-        self.ou_noise = OUActionNoise(mean=np.zeros(1), std_deviation=float(self.STD_DEV) * np.ones(1))
+        self.ou_noise = OUActionNoise(mean=np.zeros(1), std_deviation=float(self.STD_DEV) * np.ones(1), theta=float(self.THETA) * np.ones(1))
 
-        self.policy_actor_net = Actor_Model()
+        self.policy_actor_net = Actor_Model(num_layers=self.ACTOR_NUM_LAYERS, layer_width=self.ACTOR_LAYER_WIDTH)
         self.policy_critic_net = Critic_Model()
-        self.target_actor_net = Actor_Model()
+        self.target_actor_net = Actor_Model(num_layers=self.ACTOR_NUM_LAYERS, layer_width=self.ACTOR_LAYER_WIDTH)
         self.target_critic_net = Critic_Model()
 
         self.update_targets(tau=1.0)

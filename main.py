@@ -23,12 +23,16 @@ def parse():
     parser.add_argument('--tau',            dest="TAU",             default=0.2, type=float,    help='Update ratio of target network')
     parser.add_argument('--gamma',          dest="GAMMA",           default=0.99, type=float,   help='Future reward decay')
     parser.add_argument('--std',            dest="STD_DEV",         default=0.1, type=float,    help='Standard deviation of noise')
+    parser.add_argument('--theta',          dest="THETA",           default=0.15, type=float,    help='Theta of noise')
     parser.add_argument('--save_prefix',    dest="SAVE_PREFIX",     default="data", type=str,   help='Prefix of location to save content')
     parser.add_argument('--actor_lr',       dest="ACTOR_LR",        default=0.0001, type=float, help='Learning rate for the actor')
     parser.add_argument('--critic_lr',      dest="CRITIC_LR",       default=0.0002, type=float, help='Learning rate for the critic')
     parser.add_argument('--plot',           dest="PLOT",            action='store_true',        help='Whether to plot data')
     parser.add_argument('--tensorboard',    dest="TENSORBOARD",     action='store_true',        help='Whether to use tensorboard')
     parser.add_argument('--date',           dest="DATE_IN_PREFIX",  action='store_true',        help='Use the date in the prefix string (appended as _20210314_180101)')
+    
+    parser.add_argument('--actor_layer_width',  dest="ACTOR_LAYER_WIDTH", default=256,  type=int, help='Actor - Width of layer')
+    parser.add_argument('--actor_num_layers',   dest="ACTOR_NUM_LAYERS",  default=2,    type=int, help='Actor - Number layers deep')
 
     # environment settings
     parser.add_argument('--start_loc',      default=[300, 300], nargs='+', type=int,    help='Start location in format --start_loc x y')
