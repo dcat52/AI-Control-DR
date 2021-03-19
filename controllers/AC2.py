@@ -24,6 +24,14 @@ random.seed(595)
 Transition = namedtuple('Transition',
                         ('state', 'action', 'next_state', 'reward'))
 
+# Adam's GPU config
+# physical_devices = tf.config.list_physical_devices('GPU')
+# try:
+#     tf.config.experimental.set_memory_growth(physical_devices[0], True)
+# except:
+#     # Invalid device or cannot modify virtual devices once initialized.
+#     pass
+
 class OUActionNoise:
     def __init__(self, mean, std_deviation, theta=0.15, dt=2e-2, x_initial=None):
         self.theta = theta
@@ -285,8 +293,6 @@ class AC_Agent:
                     try:
                         self.tb_logger.weights_logger(self.policy_actor_net.get_weights()[0],
                                                       self.policy_critic_net.get_weights()[0],
-                                                      self.target_actor_net.get_weights()[0],
-                                                      self.target_actor_net.get_weights()[0],
                                                       i_episode * 100 + counter)
                     except IndexError:
                         print('something has no weights for some reason')

@@ -11,10 +11,10 @@ class TBLogger:
         log_dir_policy_weights = log_dir + "/weights/policy"
         log_dir_target_weights = log_dir + "/weights/target"
 
-        log_dir_policy_actor_weights = log_dir_policy_weights + "/actor"
-        log_dir_policy_critic_weights = log_dir_policy_weights + "/critic"
-        log_dir_target_actor_weights = log_dir_target_weights + "/actor"
-        log_dir_target_critic_weights = log_dir_target_weights + "/critic"
+        log_dir_policy_actor_weights = log_dir_policy_weights + "/actor/"
+        log_dir_policy_critic_weights = log_dir_policy_weights + "/critic/"
+        log_dir_target_actor_weights = log_dir_target_weights + "/actor/"
+        log_dir_target_critic_weights = log_dir_target_weights + "/critic/"
 
         # set up loggers for: ep_reward, actor weights, critic weights
         self.rewards_writer = tf.summary.create_file_writer(logdir=log_dir)
