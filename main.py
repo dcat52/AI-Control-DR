@@ -19,18 +19,19 @@ def parse():
     parser.add_argument('--batch_size',     dest="BATCH_SIZE",      default=32, type=int,       help='Batch size')
     parser.add_argument('--buffer_capacity',dest="BUFFER_CAPACITY", default=10000, type=int,    help='Buffer capacity')
     parser.add_argument('--episodes',       dest="NUM_EPISODES",    default=1000, type=int,     help='Number of episodes to run')
-    parser.add_argument('--update_freq',    dest="TARGET_UPDATE",   default=10, type=int,       help='Update target network every n iterations')
+    parser.add_argument('--update_freq',    dest="TARGET_UPDATE",   default=1, type=int,        help='Update target network every n iterations')
     parser.add_argument('--tau',            dest="TAU",             default=0.2, type=float,    help='Update ratio of target network')
     parser.add_argument('--gamma',          dest="GAMMA",           default=0.99, type=float,   help='Future reward decay')
     parser.add_argument('--std',            dest="STD_DEV",         default=0.1, type=float,    help='Standard deviation of noise')
-    parser.add_argument('--theta',          dest="THETA",           default=0.15, type=float,    help='Theta of noise')
+    parser.add_argument('--theta',          dest="THETA",           default=0.15, type=float,   help='Theta of noise')
     parser.add_argument('--save_prefix',    dest="SAVE_PREFIX",     default="data", type=str,   help='Prefix of location to save content')
     parser.add_argument('--actor_lr',       dest="ACTOR_LR",        default=0.0001, type=float, help='Learning rate for the actor')
     parser.add_argument('--critic_lr',      dest="CRITIC_LR",       default=0.0002, type=float, help='Learning rate for the critic')
     parser.add_argument('--plot',           dest="PLOT",            action='store_true',        help='Whether to plot data')
     parser.add_argument('--tensorboard',    dest="TENSORBOARD",     action='store_true',        help='Whether to use tensorboard')
     parser.add_argument('--date',           dest="DATE_IN_PREFIX",  action='store_true',        help='Use the date in the prefix string (appended as _20210314_180101)')
-    
+    parser.add_argument('--load_prefix',    dest="LOAD_PREFIX",     default="data", type=str,   help='Location to load model weights from')
+
     parser.add_argument('--actor_layer_width',  dest="ACTOR_LAYER_WIDTH", default=256,  type=int, help='Actor - Width of layer')
     parser.add_argument('--actor_num_layers',   dest="ACTOR_NUM_LAYERS",  default=2,    type=int, help='Actor - Number layers deep')
 
@@ -47,6 +48,7 @@ def parse():
     args.start_loc = tuple(args.start_loc)
     args.goal_loc = tuple(args.goal_loc)
     args.SAVE_PREFIX = "'{}'".format(args.SAVE_PREFIX)
+    args.LOAD_PREFIX = "'{}'".format(args.LOAD_PREFIX)
     args.log_level = (5 - args.log_level) * 10
     print("Modified args:", args)
     return args
@@ -58,17 +60,16 @@ def run(args: argparse.Namespace):
     if args.train_dqn:
         
         env = Environment(robot_start=args.start_loc, goal=args.goal_loc, goal_threshold=args.goal_thresh, render=args.render)
-        # models = AC.create_models(state_length=6, action_length=2, action_bounds=(-1.0, 1.0))
-        # target_models = AC.create_models(state_length=6, action_length=2, action_bounds=(-1.0, 1.0))
-        # hyper_params = AC.HyperParams(gamma=1, tau=0.02, std_dev=0.5, actor_lr=0.001, critic_lr=0.002)
-        # rewards = AC.fit(env, models, target_models, episodes=100, hp=hyper_params, state_length=6, action_bounds=(-1.0, 1.0))
-        # AC.plot_reward(rewards)
-
         agent = AC2.AC_Agent(env, args)
         agent.train()
 
     if args.test_dqn:
-        raise NotImplementedError("Not implemented yet. Currently does nothing.")
+        env = Environment(robot_start=args.start_loc, goal=args.goal_loc, goal_threshold=args.goal_thresh,
+                          render=args.render)
+        actor = args.LOAD_PREFIX + "policy_actor_net"
+        critic = args.LOAD_PREFIX + "policy_critic_net"
+        agent = AC2.AC_Agent(env, args)
+        agent.test(actor, critic)
 
 
 if __name__ == '__main__':

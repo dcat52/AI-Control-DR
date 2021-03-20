@@ -66,7 +66,6 @@ class OUActionNoise:
         else:
             self.x_prev = np.zeros_like(self.mean)
 
-
 class Buffer(object):
 
     def __init__(self, capacity):
@@ -124,7 +123,6 @@ class Actor_Model(tf.keras.Model):
         s5 = s4 * self.upper_bound
         return s5
 
-
 class Critic_Model(tf.keras.Model):
     def __init__(self, state_length=6, action_length=2):
         super(Critic_Model, self).__init__()
@@ -160,7 +158,6 @@ class Critic_Model(tf.keras.Model):
         cs4 = self.out(cs3)
         return cs4
 
-        
 class AC_Agent:
     def __init__(self, env, args):
 
@@ -178,7 +175,7 @@ class AC_Agent:
         self.BATCH_SIZE = 32
         self.BUFFER_CAPACITY = 10000
         self.NUM_EPISODES = 1000
-        self.TARGET_UPDATE = 10
+        self.TARGET_UPDATE = 1
         self.TAU = 0.2
         self.GAMMA = 0.99
         self.STD_DEV = 0.1
@@ -244,12 +241,10 @@ class AC_Agent:
 
     def save_weights(self, directory: str, i: int):
         print("Saving model weights.")
-        self.policy_actor_net.save_weights("{}/policy_actor_net_{:03d}".format(directory, i))
-        self.policy_critic_net.save_weights("{}/policy_critic_net_{:03d}".format(directory, i))
-        self.target_actor_net.save_weights("{}/target_actor_net_{:03d}".format(directory, i))
-        self.target_critic_net.save_weights("{}/target_critic_net_{:03d}".format(directory, i))
+        self.policy_actor_net.save_weights("{}/{:04d}_policy_actor_net".format(directory, i))
+        self.policy_critic_net.save_weights("{}/{:04d}_policy_critic_net".format(directory, i))
 
-    def make_action(self, state, test=True):
+    def make_action(self, state):
 
         state = state[None, :]
 
@@ -280,7 +275,7 @@ class AC_Agent:
 
             while not done:
                 # Select and perform an action
-                action = self.make_action(state, test=False)
+                action = self.make_action(state)
 
                 next_state, reward, done, info = self.env.step(action)
                 done = int(done)
@@ -312,6 +307,10 @@ class AC_Agent:
                 # Perform one step of the optimization (on the target network)
                 self.learn()
 
+                # Update the target network
+                if i_episode % self.TARGET_UPDATE == 0:
+                    self.update_targets()
+
             final_episode_reward.append(reward)
             cumulative_episode_reward.append(episodic_reward)
 
@@ -327,14 +326,9 @@ class AC_Agent:
                     ))
 
             if i_episode % self.WRITE_FREQ == 0:
-                # TODO: Write desired features (i_episode, reward, etc) to disk
                 with open(self.SAVE_PREFIX + "_values.csv", "a") as f:
                     f.write("{},{}\n".format(i_episode, episodic_reward))
                 pass
-
-            # Update the target network
-            if i_episode % self.TARGET_UPDATE == 0:
-                self.update_targets()
 
             if i_episode % self.SAVE_FREQ == 0:
                 self.save_weights(self.SAVE_PREFIX + "_weights", i_episode)
@@ -346,7 +340,70 @@ class AC_Agent:
             plt.xlabel("Episode")
             plt.ylabel("Avg. Epsiodic Reward")
             plt.show()
-    
+
+    def test(self, actor_model, critic_model):
+
+        # Load saved model weights
+        self.policy_actor_net = tf.keras.load_model(actor_model)
+        self.policy_critic_net = tf.keras.load_model(critic_model)
+
+        final_episode_reward = []
+        cumulative_episode_reward = []
+
+        for i_episode in range(1, self.NUM_EPISODES+1):
+
+            state = self.env.reset()
+            episodic_reward = 0
+            counter = 0
+            done = False
+
+            while not done:
+                # Select and perform an action
+                action = self.make_action(state)
+
+                next_state, reward, done, info = self.env.step(action)
+                done = int(done)
+
+                episodic_reward += reward
+
+                counter += 1
+                if counter == 100:
+                    done = True
+
+                rewardTensor = tf.convert_to_tensor([reward])
+
+                # Store the transition in memory
+                self.buffer.push(state, action, next_state, rewardTensor)
+
+                # Move to the next state
+                state = next_state
+
+            final_episode_reward.append(reward)
+            cumulative_episode_reward.append(episodic_reward)
+
+            # TensorBoard logging for episodic reward
+            if self.TENSORBOARD:
+                self.tb_logger.rewards_logger(episodic_reward, i_episode)
+
+            if i_episode % self.PRINT_FREQ == 0:
+                # Mean of last 40 episodes
+                avg_reward = np.mean(cumulative_episode_reward[-10:])
+                print("Episode: {:3d} -- Current Reward: {:9.2f} -- Avg Reward is: {:9.2f}".format(
+                    i_episode, episodic_reward, avg_reward
+                    ))
+
+            if i_episode % self.WRITE_FREQ == 0:
+                with open(self.SAVE_PREFIX + "_values.csv", "a") as f:
+                    f.write("{},{}\n".format(i_episode, episodic_reward))
+                pass
+
+        if self.PLOT:
+            # Plotting graph
+            # Episodes versus Avg. Rewards
+            plt.plot(cumulative_episode_reward)
+            plt.xlabel("Episode")
+            plt.ylabel("Avg. Epsiodic Reward")
+            plt.show()
 
     @tf.function
     def update(self, state_batch, action_batch, reward_batch, next_state_batch,):
