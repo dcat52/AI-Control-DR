@@ -11,7 +11,6 @@ from simulator.Reward import Reward
 class Environment:
     
     def __init__(self, robot_start: Vec2d = (0, 0), goal: Vec2d = (2, 2), goal_threshold: float = 10.0, render: bool = True, render_step: int = 5) -> None:
-
         # Physics
         # Time step
         self.dt = 1.0 / 60.0
@@ -60,9 +59,6 @@ class Environment:
         return (self._get_agent_state())
 
     def step(self, action) -> None:
-    # TODO: establish reward, return reward and some other thigns
-        # result = self._make_action(action)
-
         if self.render_env:
             self._process_keyboard()
         self.step_count += 1
@@ -91,6 +87,7 @@ class Environment:
         dist = self._agent_dist_to_goal()
         if dist <= self.goal_threshold:
             reward = self.reward_model.reward_goal
+            # self.set_new_random_goal()
             done = True
 
         # (state, reward, done, None)
@@ -100,6 +97,11 @@ class Environment:
     #     self.agent.apply_velocities(action)
 
     def set_new_goal(self, goal: Vec2d) -> None:
+        self.goal = goal
+        self.reward_model.set_new_goal(goal)
+
+    def set_new_random_goal(self) -> None:
+        goal = np.random.randint(100, 500, (2))
         self.goal = goal
         self.reward_model.set_new_goal(goal)
 
