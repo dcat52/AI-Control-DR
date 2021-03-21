@@ -176,9 +176,9 @@ class AC_Agent:
         self.BUFFER_CAPACITY = 10000
         self.NUM_EPISODES = 1000
         self.TARGET_UPDATE = 1
-        self.TAU = 0.2
+        self.TAU = 0.05
         self.GAMMA = 0.99
-        self.STD_DEV = 0.1
+        self.STD_DEV = 0.01
         self.THETA = 0.15
         self.SAVE_PREFIX = "data"
         self.ACTOR_LR = 0.0001
@@ -222,7 +222,8 @@ class AC_Agent:
         self.action_bounds = (-1.0, 1.0)
         self.lower_bound, self.upper_bound = self.action_bounds
 
-        self.ou_noise = OUActionNoise(mean=np.zeros(1), std_deviation=float(self.STD_DEV) * np.ones(1), theta=float(self.THETA) * np.ones(1))
+        self.ou_noise_L = OUActionNoise(mean=np.zeros(1), std_deviation=float(self.STD_DEV) * np.ones(1), theta=float(self.THETA) * np.ones(1))
+        self.ou_noise_R = OUActionNoise(mean=np.zeros(1), std_deviation=float(self.STD_DEV) * np.ones(1), theta=float(self.THETA) * np.ones(1))
 
         self.policy_actor_net = Actor_Model(num_layers=self.ACTOR_NUM_LAYERS, layer_width=self.ACTOR_LAYER_WIDTH)
         self.policy_critic_net = Critic_Model()
@@ -251,16 +252,11 @@ class AC_Agent:
         state = state[None, :]
 
         sampled_actions = tf.squeeze(self.policy_actor_net(state))
-        # print(sampled_actions.numpy())
-
-
-        # Adding noise to action
         sampled_actions = sampled_actions.numpy()
-
+        # print(sampled_actions)
 
         # We make sure action is within bounds
         legal_action = np.clip(sampled_actions, self.lower_bound, self.upper_bound)
-
         return legal_action
 
     def train(self):
@@ -272,22 +268,19 @@ class AC_Agent:
 
             state = self.env.reset()
             episodic_reward = 0
-
             counter = 0
-
             done = False
 
             while not done:
                 # Select and perform an action
                 action = self.make_action(state)
-                noise_L = self.ou_noise()
-                noise_R = self.ou_noise()
+                noise_L = self.ou_noise_L()
+                noise_R = self.ou_noise_R()
                 action[0] = action[0] + noise_L
                 action[1] = action[1] + noise_R
 
                 next_state, reward, done, info = self.env.step(action)
                 done = int(done)
-
                 episodic_reward += reward
 
                 # TensorBoard
