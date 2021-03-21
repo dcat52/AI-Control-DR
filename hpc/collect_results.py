@@ -13,6 +13,9 @@ import matplotlib.pyplot as plt
 import mpl_toolkits.mplot3d
 from matplotlib import cm
 
+import scipy
+from scipy.ndimage import gaussian_filter
+
 matplotlib.use("Agg")
 np.set_printoptions(precision=2, linewidth=180, suppress=True)
 
@@ -97,8 +100,6 @@ def main():
     np.save('y.npy', y)
     np.save('z.npy', z)
 
-    # z = np.gaussian_filter(z, sigma=1)
-
     print("---------")
     print("---------")
     print(x[0:3,0:3])
@@ -107,17 +108,22 @@ def main():
     print("---------")
     print(z2[0:3,0:3])
 
-    plt.ioff()
-    fig = plt.figure()
-    ax = plt.axes(projection='3d')
-    ax.plot_surface(x, y, z, rcount=100, ccount=100, edgecolor='none', cmap=cm.coolwarm,
-                       linewidth=0, antialiased=False)
-    ax.set_xlabel('x')
-    ax.set_ylabel('y')
-    ax.set_zlabel('z')
+    def plot(x, y, z, filename):
 
-    plt.savefig("out.png", dpi=400)
+        plt.ioff()
+        fig = plt.figure()
+        ax = plt.axes(projection='3d')
+        ax.plot_surface(x, y, z, rcount=100, ccount=100, edgecolor='none', cmap=cm.coolwarm,
+                        linewidth=0, antialiased=False)
+        ax.set_xlabel('x')
+        ax.set_ylabel('y')
+        ax.set_zlabel('z')
 
+        plt.savefig(filename, dpi=400)
+
+    plot(x, y, z, "out.png")
+    z = scipy.ndimage.gaussian_filter(z, sigma=4)
+    plot(x, y, z, "out2.png")
 
 if __name__=='__main__':
     main()
