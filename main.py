@@ -1,9 +1,13 @@
 import argparse
 import logging
 import sys
+import random
 
 from src.simulator.Environment import Environment
 import src.controllers.AC2 as AC2
+
+import tensorflow
+import numpy
 
 def parse():
     parser = argparse.ArgumentParser(description="AI Control DR")
@@ -16,14 +20,14 @@ def parse():
     # model settings
     parser.add_argument('--print_freq',      dest="PRINT_FREQ",      default=1, type=int,        help='How often to print information to std out')
     parser.add_argument('--write_freq',      dest="WRITE_FREQ",      default=5, type=int,        help='How often to save information to disk')
-    parser.add_argument('--save_freq',       dest="SAVE_FREQ",       default=1000, type=int,       help='Save model weights every n iterations')
+    parser.add_argument('--save_freq',       dest="SAVE_FREQ",       default=1000, type=int,     help='Save model weights every n iterations')
     parser.add_argument('--batch_size',      dest="BATCH_SIZE",      default=32, type=int,       help='Batch size')
     parser.add_argument('--buffer_capacity', dest="BUFFER_CAPACITY", default=10000, type=int,    help='Buffer capacity')
     parser.add_argument('--episodes',        dest="NUM_EPISODES",    default=1000, type=int,     help='Number of episodes to run')
     parser.add_argument('--update_freq',     dest="TARGET_UPDATE",   default=1, type=int,        help='Update target network every n iterations')
-    parser.add_argument('--tau',             dest="TAU",             default=0.05, type=float,    help='Update ratio of target network')
+    parser.add_argument('--tau',             dest="TAU",             default=0.05, type=float,   help='Update ratio of target network')
     parser.add_argument('--gamma',           dest="GAMMA",           default=0.99, type=float,   help='Future reward decay')
-    parser.add_argument('--std',             dest="STD_DEV",         default=0.01, type=float,    help='Standard deviation of noise')
+    parser.add_argument('--std',             dest="STD_DEV",         default=0.01, type=float,   help='Standard deviation of noise')
     parser.add_argument('--theta',           dest="THETA",           default=0.15, type=float,   help='Theta of noise')
     parser.add_argument('--save_prefix',     dest="SAVE_PREFIX",     default="data", type=str,   help='Prefix of location to save content')
     parser.add_argument('--actor_lr',        dest="ACTOR_LR",        default=0.0001, type=float, help='Learning rate for the actor')
@@ -32,6 +36,7 @@ def parse():
     parser.add_argument('--tensorboard',     dest="TENSORBOARD",     action='store_true',        help='Whether to use tensorboard')
     parser.add_argument('--date',            dest="DATE_IN_PREFIX",  action='store_true',        help='Use the date in the prefix string (appended as _20210314_180101)')
     parser.add_argument('--load_prefix',     dest="LOAD_PREFIX",     default="data", type=str,   help='Location to load model weights from')
+    parser.add_argument('--seed',            dest="SEED",            default=-1, type=int,       help='Set the default seed value, -1 is random seed.')
 
     parser.add_argument('--actor_layer_width',  dest="ACTOR_LAYER_WIDTH", default=256,  type=int, help='Actor - Width of layer')
     parser.add_argument('--actor_num_layers',   dest="ACTOR_NUM_LAYERS",  default=2,    type=int, help='Actor - Number layers deep')
@@ -66,6 +71,11 @@ def run(args: argparse.Namespace):
         except:
             # Invalid device or cannot modify virtual devices once initialized.
             pass
+
+    if args.SEED != -1:
+        tensorflow.random.set_seed(args.SEED)
+        numpy.random.seed(args.SEED)
+        random.seed(args.SEED)
 
     if args.train_dqn:
         env = Environment(robot_start=args.start_loc, goal=args.goal_loc, goal_threshold=args.goal_thresh, render=args.render)

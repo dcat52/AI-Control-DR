@@ -18,10 +18,6 @@ from src.util import OUActionNoise, Buffer, Transition
 np.set_printoptions(precision=2, linewidth=180)
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
-tf.random.set_seed(595)
-np.random.seed(595)
-random.seed(595)
-
 class AC_Agent:
     def __init__(self, env, args):
 
