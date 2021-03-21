@@ -1,7 +1,7 @@
 from argparse import Namespace
 
-from simulator.Environment import Environment
-from controllers.AC2 import *
+from src.simulator.Environment import Environment
+from src.controllers.AC2 import *
 import tensorflow as tf
 
 """

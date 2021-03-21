@@ -2,8 +2,8 @@ import argparse
 import logging
 import sys
 
-from simulator.Environment import Environment
-import controllers.AC2 as AC2
+from src.simulator.Environment import Environment
+import src.controllers.AC2 as AC2
 
 def parse():
     parser = argparse.ArgumentParser(description="AI Control DR")

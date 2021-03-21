@@ -5,158 +5,22 @@ import random
 import queue
 import datetime
 import logging
-from collections import deque, namedtuple
 from itertools import count
 
 import tensorflow as tf
 from tensorflow.keras import layers, optimizers
-from tensorflow import nn
 import numpy as np
 import matplotlib.pyplot as plt
+
+from src.controllers.Models import Actor_Model, Critic_Model
+from src.util import OUActionNoise, Buffer, Transition
 
 np.set_printoptions(precision=2, linewidth=180)
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
-# tf.manual_seed(595)
+tf.random.set_seed(595)
 np.random.seed(595)
 random.seed(595)
-
-Transition = namedtuple('Transition',
-                        ('state', 'action', 'next_state', 'reward'))
-
-# Adam's GPU config
-# physical_devices = tf.config.list_physical_devices('GPU')
-# try:
-#     tf.config.experimental.set_memory_growth(physical_devices[0], True)
-# except:
-#     # Invalid device or cannot modify virtual devices once initialized.
-#     pass
-
-class OUActionNoise:
-    def __init__(self, mean, std_deviation, theta=0.15, dt=2e-2, x_initial=None):
-        self.theta = theta
-        self.mean = mean
-        self.std_dev = std_deviation
-        self.dt = dt
-        self.x_initial = x_initial
-        self.reset()
-
-    # @tf.function
-    def __call__(self):
-        # Formula taken from https://www.wikipedia.org/wiki/Ornstein-Uhlenbeck_process.
-        x = (
-            self.x_prev
-            + self.theta * (self.mean - self.x_prev) * self.dt
-            + self.std_dev * np.sqrt(self.dt) * np.random.normal(size=self.mean.shape)
-        )
-        # Store x into x_prev
-        # Makes next noise dependent on current one
-        self.x_prev = x
-        return x
-
-    def get_std_dev(self):
-        return self.std_dev
-
-    def set_std_dev(self, std_deviation):
-        self.std_dev = std_deviation
-
-    def reset(self):
-        if self.x_initial is not None:
-            self.x_prev = self.x_initial
-        else:
-            self.x_prev = np.zeros_like(self.mean)
-
-class Buffer(object):
-
-    def __init__(self, capacity):
-        self.capacity = capacity
-        self.memory = []
-        self.position = 0
-
-    def push(self, *args):
-        """Saves a transition."""
-        if len(self.memory) < self.capacity:
-            self.memory.append(None)
-        self.memory[self.position] = Transition(*args)
-        self.position = (self.position + 1) % self.capacity
-
-    def sample(self, batch_size):
-        return random.sample(self.memory, batch_size)
-
-    def __len__(self):
-        return len(self.memory)
-
-class Actor_Model(tf.keras.Model):
-    def __init__(self, action_bounds=(-1.0, 1.0), state_length=6, action_length=2, num_layers=2, layer_width=256):
-        super(Actor_Model, self).__init__()
-
-        self.lower_bound, self.upper_bound = action_bounds
-
-        # Initialize weights between -3e-3 and 3-e3
-        self.last_init = tf.random_uniform_initializer(minval=-0.003, maxval=0.003)
-
-        self.hl = []
-
-        # self.inp = layers.Input(shape=(state_length,))
-        self.inp = layers.Dense(state_length, activation=nn.relu)
-        for i in range(num_layers):
-            layer = layers.Dense(layer_width, activation=nn.relu)
-            self.hl.append(layer)
-        # self.hl2 = layers.Dense(256, activation=nn.relu)
-        self.out = layers.Dense(action_length, activation=nn.tanh, kernel_initializer=self.last_init)
-
-    @tf.function
-    def call(self, inputs):
-        s1 = self.inp(inputs)
-
-        temp = s1
-
-        for i in range(len(self.hl)):
-            temp = self.hl[i](temp)
-
-        if(len(self.hl) == 0):
-            hl_out = s1
-
-        # s2 = self.hl1(s1)
-        # s3 = self.hl2(s2)
-        s4 = self.out(temp)
-        s5 = s4 * self.upper_bound
-        return s5
-
-class Critic_Model(tf.keras.Model):
-    def __init__(self, state_length=6, action_length=2):
-        super(Critic_Model, self).__init__()
-        # State as input
-        # self.state_input = layers.Input(shape=(state_length))
-        self.state_input = layers.Dense(state_length, activation=nn.relu)
-        self.state_hl1 = layers.Dense(16, activation=nn.relu)
-        self.state_out = layers.Dense(32, activation=nn.relu)
-
-        # Action as input
-        # self.action_input = layers.Input(shape=(action_length))
-        self.action_input = layers.Dense(action_length, activation=nn.relu)
-        self.action_out = layers.Dense(32, activation=nn.relu)
-
-        # Both are passed through seperate layer before concatenating
-        self.combined_input = layers.Concatenate()
-        self.combined_hl1 = layers.Dense(256, activation=nn.relu)
-        self.combined_hl2 = layers.Dense(256, activation=nn.relu)
-        self.out = layers.Dense(1)
-
-    @tf.function
-    def call(self, inputs):
-        ss1 = self.state_input(inputs[0])
-        ss2 = self.state_hl1(ss1)
-        ss3 = self.state_out(ss2)
-
-        as1 = self.action_input(inputs[1])
-        as2 = self.action_out(as1)
-
-        cs1 = self.combined_input([ss3, as2])
-        cs2 = self.combined_hl1(cs1)
-        cs3 = self.combined_hl2(cs2)
-        cs4 = self.out(cs3)
-        return cs4
 
 class AC_Agent:
     def __init__(self, env, args):

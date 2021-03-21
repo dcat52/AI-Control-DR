@@ -40,9 +40,6 @@ def f(d):
 
     return d, max_avg
 
-
-
-
 def main():
     args = parse()
 

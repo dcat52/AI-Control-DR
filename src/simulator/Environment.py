@@ -4,8 +4,8 @@ import pymunk
 import pymunk.pygame_util
 from pymunk import Vec2d
 
-from simulator.Agent import Agent
-from simulator.Reward import Reward
+from src.simulator.Agent import Agent
+from src.simulator.Reward import Reward
 
 
 class Environment:
