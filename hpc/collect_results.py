@@ -13,9 +13,6 @@ import matplotlib.pyplot as plt
 import mpl_toolkits.mplot3d
 from matplotlib import cm
 
-import scipy
-from scipy.ndimage import gaussian_filter
-
 matplotlib.use("Agg")
 np.set_printoptions(precision=2, linewidth=180, suppress=True)
 
@@ -122,6 +119,10 @@ def main():
         plt.savefig(filename, dpi=400)
 
     plot(x, y, z, "out.png")
+
+    import scipy
+    from scipy.ndimage import gaussian_filter
+    
     z = scipy.ndimage.gaussian_filter(z, sigma=4)
     plot(x, y, z, "out2.png")
 
