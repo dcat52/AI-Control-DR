@@ -75,8 +75,8 @@ def run(args: argparse.Namespace):
     if args.test_dqn:
         env = Environment(robot_start=args.start_loc, goal=args.goal_loc, goal_threshold=args.goal_thresh,
                           render=args.render)
-        actor = args.LOAD_PREFIX + "policy_actor_net"
-        critic = args.LOAD_PREFIX + "policy_critic_net"
+        actor = args.LOAD_PREFIX
+        critic = args.LOAD_PREFIX
         agent = AC2.AC_Agent(env, args)
         agent.test(actor, critic)
 

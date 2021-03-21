@@ -241,18 +241,23 @@ class AC_Agent:
 
     def save_weights(self, directory: str, i: int):
         print("Saving model weights.")
-        self.policy_actor_net.save_weights("{}/{:04d}_policy_actor_net".format(directory, i))
-        self.policy_critic_net.save_weights("{}/{:04d}_policy_critic_net".format(directory, i))
+        self.policy_actor_net.save_weights("{}/{:04d}_policy_actor_net.hdf5".format(directory, i))
+        self.policy_critic_net.save_weights("{}/{:04d}_policy_critic_net.hdf5".format(directory, i))
 
     def make_action(self, state):
 
         state = state[None, :]
 
         sampled_actions = tf.squeeze(self.policy_actor_net(state))
-        noise = self.ou_noise()
+        # print(sampled_actions.numpy())
+        noise_L = self.ou_noise()
+        noise_R = self.ou_noise()
 
         # Adding noise to action
-        sampled_actions = sampled_actions.numpy() + noise
+        sampled_actions = sampled_actions.numpy()
+        sampled_actions[0] = sampled_actions[0] + noise_L
+        sampled_actions[1] = sampled_actions[1] + noise_R
+
 
         # We make sure action is within bounds
         legal_action = np.clip(sampled_actions, self.lower_bound, self.upper_bound)
@@ -344,8 +349,11 @@ class AC_Agent:
     def test(self, actor_model, critic_model):
 
         # Load saved model weights
-        self.policy_actor_net = tf.keras.load_model(actor_model)
-        self.policy_critic_net = tf.keras.load_model(critic_model)
+        self.policy_actor_net.built = True
+        self.policy_actor_net.load_weights(actor_model)
+        self.policy_critic_net.built = True
+        self.policy_critic_net.load_weights(critic_model)
+
 
         final_episode_reward = []
         cumulative_episode_reward = []
@@ -369,11 +377,6 @@ class AC_Agent:
                 counter += 1
                 if counter == 100:
                     done = True
-
-                rewardTensor = tf.convert_to_tensor([reward])
-
-                # Store the transition in memory
-                self.buffer.push(state, action, next_state, rewardTensor)
 
                 # Move to the next state
                 state = next_state
