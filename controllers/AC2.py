@@ -241,8 +241,10 @@ class AC_Agent:
 
     def save_weights(self, directory: str, i: int):
         print("Saving model weights.")
-        self.policy_actor_net.save_weights("{}/{:04d}_policy_actor_net.hdf5".format(directory, i))
-        self.policy_critic_net.save_weights("{}/{:04d}_policy_critic_net.hdf5".format(directory, i))
+        # self.policy_actor_net.to_json("{}/{:04d}_policy_actor_net.json".format(directory, i))
+        # self.policy_actor_net.to_json("{}/{:04d}_policy_critic_net.json".format(directory, i))
+        self.policy_actor_net.save("{}/{:04d}_policy_actor_net".format(directory, i), save_format="tf")
+        self.policy_critic_net.save("{}/{:04d}_policy_critic_net".format(directory, i),  save_format="tf")
 
     def make_action(self, state):
 
@@ -250,13 +252,10 @@ class AC_Agent:
 
         sampled_actions = tf.squeeze(self.policy_actor_net(state))
         # print(sampled_actions.numpy())
-        noise_L = self.ou_noise()
-        noise_R = self.ou_noise()
+
 
         # Adding noise to action
         sampled_actions = sampled_actions.numpy()
-        sampled_actions[0] = sampled_actions[0] + noise_L
-        sampled_actions[1] = sampled_actions[1] + noise_R
 
 
         # We make sure action is within bounds
@@ -281,6 +280,10 @@ class AC_Agent:
             while not done:
                 # Select and perform an action
                 action = self.make_action(state)
+                noise_L = self.ou_noise()
+                noise_R = self.ou_noise()
+                action[0] = action[0] + noise_L
+                action[1] = action[1] + noise_R
 
                 next_state, reward, done, info = self.env.step(action)
                 done = int(done)
@@ -346,14 +349,17 @@ class AC_Agent:
             plt.ylabel("Avg. Epsiodic Reward")
             plt.show()
 
-    def test(self, actor_model, critic_model):
-
+    def test(self):
+        # from tensorflow.keras.models import model_from_json
+        # pa_model = model_from_json(actor_model + '.json')
+        # pc_model = model_from_json(critic_model + '.json')
         # Load saved model weights
-        self.policy_actor_net.built = True
-        self.policy_actor_net.load_weights(actor_model)
-        self.policy_critic_net.built = True
-        self.policy_critic_net.load_weights(critic_model)
-
+        # pa_model.load_weights(actor_model + '.h5')
+        # pc_model.load_weights(critic_model + '.h5')
+        # print(actor_model)
+        # print(critic_model)
+        # self.policy_actor_net.load_weights(actor_model)
+        # self.policy_critic_net.load_weights(critic_model)
 
         final_episode_reward = []
         cumulative_episode_reward = []
