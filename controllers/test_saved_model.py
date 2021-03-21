@@ -9,8 +9,7 @@ Script to run a predefined save file in a test environment
 Runs without training or added noise
 """
 
-ACTOR_MODEL_DIR = 'data_weights/0550_policy_actor_net'
-CRITIC_MODEL_DIR = 'data_weights/0550_policy_critic_net'
+MODEL_PREFIX = 'data_weights/0020_policy_'
 
 
 physical_devices = tf.config.list_physical_devices('GPU')
@@ -28,7 +27,6 @@ args = Namespace(ACTOR_LAYER_WIDTH=256,
                  CRITIC_LR=0.0002,
                  DATE_IN_PREFIX=False,
                  GAMMA=0.99,
-                 LOAD_PREFIX="''",
                  NUM_EPISODES=1000,
                  PLOT=False,
                  PRINT_FREQ=1,
@@ -47,12 +45,13 @@ args = Namespace(ACTOR_LAYER_WIDTH=256,
                  render=False,
                  start_loc=(300, 300),
                  test_dqn=True,
-                 train_dqn=False)
+                 train_dqn=False,
+                 LOAD_PREFIX="'{}'".format(MODEL_PREFIX))
 
 env = Environment(robot_start=(300, 300), goal=(400, 400), goal_threshold=10, render=True)
 ac = AC_Agent(env, args)
 
-ac.policy_actor_net = tf.keras.models.load_model(ACTOR_MODEL_DIR)
-ac.policy_critic_net = tf.keras.models.load_model(CRITIC_MODEL_DIR)
+# ac.policy_actor_net = tf.keras.models.load_model(ACTOR_MODEL_DIR)
+# ac.policy_critic_net = tf.keras.models.load_model(CRITIC_MODEL_DIR)
 
 ac.test()

@@ -350,16 +350,10 @@ class AC_Agent:
             plt.show()
 
     def test(self):
-        # from tensorflow.keras.models import model_from_json
-        # pa_model = model_from_json(actor_model + '.json')
-        # pc_model = model_from_json(critic_model + '.json')
         # Load saved model weights
-        # pa_model.load_weights(actor_model + '.h5')
-        # pc_model.load_weights(critic_model + '.h5')
-        # print(actor_model)
-        # print(critic_model)
-        # self.policy_actor_net.load_weights(actor_model)
-        # self.policy_critic_net.load_weights(critic_model)
+        # data_weights/0550_policy_
+        self.policy_actor_net = tf.keras.models.load_model('{}actor_net'.format(self.LOAD_PREFIX))
+        self.critic_actor_net = tf.keras.models.load_model('{}critic_net'.format(self.LOAD_PREFIX))
 
         final_episode_reward = []
         cumulative_episode_reward = []

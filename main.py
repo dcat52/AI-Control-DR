@@ -78,7 +78,7 @@ def run(args: argparse.Namespace):
         actor = args.LOAD_PREFIX
         critic = args.LOAD_PREFIX
         agent = AC2.AC_Agent(env, args)
-        agent.test(actor, critic)
+        agent.test()
 
 
 if __name__ == '__main__':
