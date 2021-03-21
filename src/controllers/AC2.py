@@ -29,25 +29,25 @@ class AC_Agent:
         # --------------------------------------
         # NOTE: These parameters are overwritten when run by `main.py`
         # NOTE: The defaults here match those by `main.py`
-        self.PRINT_FREQ = 1
-        self.WRITE_FREQ = 5
-        self.SAVE_FREQ = 50
-        self.BATCH_SIZE = 32
-        self.BUFFER_CAPACITY = 10000
-        self.NUM_EPISODES = 1000
-        self.TARGET_UPDATE = 1
-        self.TAU = 0.05
-        self.GAMMA = 0.99
-        self.STD_DEV = 0.01
-        self.THETA = 0.15
-        self.SAVE_PREFIX = "data"
-        self.ACTOR_LR = 0.0001
-        self.CRITIC_LR = 0.0002
-        self.PLOT = False
-        self.TENSORBOARD = False
-        self.DATE_IN_PREFIX = False
-        self.ACTOR_NUM_LAYERS = 2
-        self.ACTOR_LAYER_WIDTH = 256
+        self.PRINT_FREQ: int
+        self.WRITE_FREQ: int
+        self.SAVE_FREQ: int
+        self.BATCH_SIZE: int
+        self.BUFFER_CAPACITY: int
+        self.NUM_EPISODES: int
+        self.TARGET_UPDATE: int
+        self.TAU: float
+        self.GAMMA: float
+        self.STD_DEV: float
+        self.THETA: float
+        self.SAVE_PREFIX: str
+        self.ACTOR_LR: float
+        self.CRITIC_LR: float
+        self.PLOT: bool
+        self.TENSORBOARD: bool
+        self.DATE_IN_PREFIX: bool
+        self.ACTOR_NUM_LAYERS: int
+        self.ACTOR_LAYER_WIDTH: int
         # --------------------------------------
 
         # self.START = 1.0
