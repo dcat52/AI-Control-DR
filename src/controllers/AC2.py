@@ -105,7 +105,7 @@ class AC_Agent:
         # self.policy_actor_net.to_json("{}/{:04d}_policy_actor_net.json".format(directory, i))
         # self.policy_actor_net.to_json("{}/{:04d}_policy_critic_net.json".format(directory, i))
         self.policy_actor_net.save("{}/{:04d}_policy_actor_net".format(directory, i), save_format="tf")
-        self.policy_critic_net.save("{}/{:04d}_policy_critic_net".format(directory, i),  save_format="tf")
+        # self.policy_critic_net.save("{}/{:04d}_policy_critic_net".format(directory, i),  save_format="tf")
 
     def make_action(self, state):
 
@@ -121,7 +121,6 @@ class AC_Agent:
 
     def train(self):
 
-        final_episode_reward = []
         cumulative_episode_reward = []
 
         for i_episode in range(1, self.NUM_EPISODES+1):
@@ -169,10 +168,9 @@ class AC_Agent:
                 self.learn()
 
                 # Update the target network
-                if i_episode % self.TARGET_UPDATE == 0:
+                if counter % self.TARGET_UPDATE == 0:
                     self.update_targets()
 
-            final_episode_reward.append(reward)
             cumulative_episode_reward.append(episodic_reward)
 
             # TensorBoard logging for episodic reward
