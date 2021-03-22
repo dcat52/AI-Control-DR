@@ -113,7 +113,11 @@ class AC_Agent:
 
         sampled_actions = tf.squeeze(self.policy_actor_net(state))
         sampled_actions = sampled_actions.numpy()
-        # print(sampled_actions)
+
+        noise_L = self.ou_noise_L()
+        noise_R = self.ou_noise_R()
+        sampled_actions[0] = sampled_actions[0] + noise_L
+        sampled_actions[1] = sampled_actions[1] + noise_R
 
         # We make sure action is within bounds
         legal_action = np.clip(sampled_actions, self.lower_bound, self.upper_bound)
@@ -133,10 +137,6 @@ class AC_Agent:
             while not done:
                 # Select and perform an action
                 action = self.make_action(state)
-                noise_L = self.ou_noise_L()
-                noise_R = self.ou_noise_R()
-                action[0] = action[0] + noise_L
-                action[1] = action[1] + noise_R
 
                 next_state, reward, done, info = self.env.step(action)
                 done = int(done)
