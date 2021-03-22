@@ -20,7 +20,7 @@ mkdir ${store_dir}
 module load parallel
 
 echo "Using file $1"
-srun="srun --exclusive -N1 -n1 --cpus-per-task $SLURM_CPUS_PER_TASK"
+srun="srun --exclusive -N1 -n1 -c $SLURM_CPUS_PER_TASK"
 fake="echo {JN}"
 
 pre="mkdir ${store_dir}/{JN} ; echo submitting job {JN}"
