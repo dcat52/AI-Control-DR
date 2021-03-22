@@ -14,20 +14,19 @@ import mpl_toolkits.mplot3d
 from matplotlib import cm
 
 matplotlib.use("Agg")
-np.set_printoptions(precision=2, linewidth=180, suppress=True)
+np.set_printoptions(precision=4, linewidth=180, suppress=True)
 
-
-def parse():
-    parser = argparse.ArgumentParser(description="Result collector")
-    parser.add_argument('-f',   '--folder',   dest="FOLDER",  type=str,   help='Folder to process')
-
-    args = parser.parse_args()
-    return args
+parser = argparse.ArgumentParser(description="Result collector")
+parser.add_argument('-f',   '--folder',   dest="FOLDER",                type=str,   help='Folder to process')
+parser.add_argument('-s',   '--sigma',    dest="SIGMA",   default=4,    type=int,   help='Sigma for gaussian')
+parser.add_argument('-n',   '--num',      dest="NUM",     default=20,   type=int,   help='Number of values to avg together')
+# parser.add_argument('-x',   '--xvals',    dest='X',       )
+args = parser.parse_args()
 
 def f(d):
     arr = np.genfromtxt('{}/data_values.csv'.format(d),delimiter=',')
 
-    n = 20
+    n = args.NUM
 
     max_avg = -9E9
     for i in range(n, arr.shape[0]):
@@ -41,7 +40,6 @@ def f(d):
     return d, max_avg
 
 def main():
-    args = parse()
 
     base_dir = args.FOLDER
 
@@ -71,14 +69,14 @@ def main():
 
     res.sort(key=lambda e: e[0], reverse=False)
 
-    y = range(1,21)
-    x = [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.08, 0.10, 0.12, 0.14, 0.16, 0.18, 0.2, 0.22, 0.24, 0.26, 0.28, 0.30, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95, 1.00]
+    # y = range(1,21)
+    # x = [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.08, 0.10, 0.12, 0.14, 0.16, 0.18, 0.2, 0.22, 0.24, 0.26, 0.28, 0.30, 0.35, 0.40, 0.45, 0.50, 0.55, 0.60, 0.65, 0.70, 0.75, 0.80, 0.85, 0.90, 0.95, 1.00]
     
-    y = [50000, 40000, 30000, 20000, 10000, 5000, 3000, 1000]
-    x = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
+    # y = [50000, 40000, 30000, 20000, 10000, 5000, 3000, 1000]
+    # x = [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024]
 
-    x = np.array(range(1,101))/100
-    y = range(1,21)
+    x = np.array(list(range(1, 5)))
+    y = np.array(list(range(1, 100, 2))) / 100
     
     z = []
     z2 = []
@@ -123,7 +121,7 @@ def main():
     import scipy
     from scipy.ndimage import gaussian_filter
     
-    z = scipy.ndimage.gaussian_filter(z, sigma=4)
+    z = scipy.ndimage.gaussian_filter(z, sigma=args.SIGMA)
     plot(x, y, z, "out2.png")
 
 if __name__=='__main__':
