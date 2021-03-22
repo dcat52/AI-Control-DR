@@ -17,11 +17,14 @@ matplotlib.use("Agg")
 np.set_printoptions(precision=4, linewidth=180, suppress=True)
 
 parser = argparse.ArgumentParser(description="Result collector")
-parser.add_argument('-f',   '--folder',   dest="FOLDER",                type=str,   help='Folder to process')
+parser.add_argument('-f',   '--folder',   dest="FOLDERS", nargs='+',    type=str,   help='Folder to process', required=True)
 parser.add_argument('-s',   '--sigma',    dest="SIGMA",   default=4,    type=int,   help='Sigma for gaussian')
 parser.add_argument('-n',   '--num',      dest="NUM",     default=20,   type=int,   help='Number of values to avg together')
-# parser.add_argument('-x',   '--xvals',    dest='X',       )
+parser.add_argument('-x',   '--xvals',    dest='X',       nargs='+',    type=float, help='xvals for graph')
+parser.add_argument('-y',   '--yvals',    dest='Y',       nargs='+',    type=float, help='yvals for graph')
 args = parser.parse_args()
+
+print(args)
 
 def f(d):
     arr = np.genfromtxt('{}/data_values.csv'.format(d),delimiter=',')
@@ -41,9 +44,11 @@ def f(d):
 
 def main():
 
-    base_dir = args.FOLDER
+    base_dirs = args.FOLDERS
 
-    dirs = glob.glob('{}/*/'.format(base_dir))
+    dirs = []
+    for d in base_dirs:
+        dirs.extend(glob.glob('{}/*/'.format(d)))
     
     res = []
     with multiprocessing.Pool() as p:
@@ -77,6 +82,14 @@ def main():
 
     x = np.array(list(range(1, 5)))
     y = np.array(list(range(1, 100, 2))) / 100
+
+    X = args.X
+    Y = args.Y
+    if X is not None and len(X) > 0:
+        x = np.array(X)
+    if Y is not None and len(Y) > 0:
+        y = np.array(Y)
+
     
     z = []
     z2 = []
