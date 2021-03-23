@@ -171,7 +171,7 @@ def main():
 
     plt2d = yarr.shape == (1,)
     plt3d = not plt2d
-    
+
     if plt2d:
         x = x[0]
         z = z[0]
@@ -182,7 +182,7 @@ def main():
         from scipy.ndimage import gaussian_filter
         z = scipy.ndimage.gaussian_filter(z, sigma=args.SIGMA)
         
-        plot2(x, z, "plt2_smoothed.png")
+        plot2(x, z, "plt2_gaussian.png")
 
 
     if plt3d:
