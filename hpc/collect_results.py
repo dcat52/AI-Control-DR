@@ -17,12 +17,15 @@ matplotlib.use("Agg")
 np.set_printoptions(precision=4, linewidth=180, suppress=True)
 
 parser = argparse.ArgumentParser(description="Result collector")
-parser.add_argument('-f',   '--folder',   dest="FOLDERS", nargs='+',                type=str,   help='Folder to process',   required=True)
-parser.add_argument('-s',   '--sigma',    dest="SIGMA",   nargs='+',  default=4,    type=float, help='Sigma for gaussian')
-parser.add_argument('-n',   '--num',      dest="NUM",                 default=20,   type=int,   help='Number of values to avg together')
-parser.add_argument('-x',   '--xvals',    dest='X',       nargs='+',                type=float, help='xvals for graph')
-parser.add_argument('-y',   '--yvals',    dest='Y',       nargs='+',                type=float, help='yvals for graph')
-parser.add_argument('-c',   '--cutoff',   dest="CUTOFF",              default=None, type=str,   help='Dont check dirs that exist after this one')
+parser.add_argument('-f',   '--folder',   dest="FOLDERS", nargs='+',                     type=str,   help='Folder to process',   required=True)
+parser.add_argument('-s',   '--sigma',    dest="SIGMA",   nargs='+',  default=4,         type=float, help='Sigma for gaussian')
+parser.add_argument('-n',   '--num',      dest="NUM",                 default=20,        type=int,   help='Number of values to avg together')
+parser.add_argument('-x',   '--xvals',    dest='X',       nargs='+',                     type=float, help='xvals for graph')
+parser.add_argument('-y',   '--yvals',    dest='Y',       nargs='+',                     type=float, help='yvals for graph')
+parser.add_argument('-c',   '--cutoff',   dest="CUTOFF",              default=None,      type=str,   help='Dont check dirs that exist after this one')
+parser.add_argument('--xlabel',           dest="X_LABEL",             default='X',       type=str,   help='Name for X Axis')
+parser.add_argument('--ylabel',           dest="Y_LABEL",             default='Y',       type=str,   help='Name for Y Axis')
+parser.add_argument('--zlabel',           dest="Z_LABEL",             default='Reward',  type=str,   help='Name for Z Axis')
 args = parser.parse_args()
 
 print(args)
@@ -135,14 +138,22 @@ def main():
         ax.plot_surface(x, y, z, rstride=1, cstride=1, edgecolor='none', cmap=cm.coolwarm,
                         linewidth=1, antialiased=False, zorder = 0.1)
 
-        ax.set_xlabel('x')
-        ax.set_ylabel('y')
-        ax.set_zlabel('z')
+        ax.set_xlabel(args.X_LABEL)
+        ax.set_ylabel(args.Y_LABEL)
+        ax.set_zlabel(args.Z_LABEL)
 
         if angle is not None:
-            ax.view_init(angle[0], angle[1]) 
+            ax.view_init(angle[0], angle[1])
+
+        if angle == (90, -90):
+            ax.set_zticklabels([])
+        if angle == (0, -90):
+            ax.set_yticklabels([])
+        if angle == (0, 0):
+            ax.set_xticklabels([])
 
         plt.savefig(filename, dpi=600, bbox_inches='tight')
+        print("Saved plot {}.".format(filename))
 
     plot(x, y, z, "plt1_raw.png")
 
