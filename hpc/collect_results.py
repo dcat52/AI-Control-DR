@@ -128,13 +128,12 @@ def main():
     print(z2[0:3,0:3])
     print("--------------")
 
-    def plot(x, y, z, filename, angle=None):
+    def plot3(x, y, z, filename, angle=None):
 
         plt.ioff()
         fig = plt.figure()
+
         ax = plt.axes(projection='3d')
-
-
         ax.plot_surface(x, y, z, rstride=1, cstride=1, edgecolor='none', cmap=cm.coolwarm,
                         linewidth=1, antialiased=False, zorder = 0.1)
 
@@ -155,17 +154,49 @@ def main():
         plt.savefig(filename, dpi=600, bbox_inches='tight')
         print("Saved plot {}.".format(filename))
 
-    plot(x, y, z, "plt1_raw.png")
+    def plot2(x, y, filename):
 
-    import scipy
-    from scipy.ndimage import gaussian_filter
+        plt.ioff()
+        fig = plt.figure()
+        
+        ax = fig.gca()
+        plt.plot(x, y)
+
+        ax.set_xlabel(args.X_LABEL)
+        ax.set_ylabel(args.Y_LABEL)
+
+        plt.savefig(filename, dpi=600, bbox_inches='tight')
+        print("Saved plot {}".format(filename))
+
+
+    plt2d = yarr.shape == (1,)
+    plt3d = not plt2d
     
-    z = scipy.ndimage.gaussian_filter(z, sigma=args.SIGMA)
-    plot(x, y, z, "plt2_gaussian.png")
+    if plt2d:
+        x = x[0]
+        z = z[0]
 
-    plot(x, y, z, "plt3_xy.png", angle=(90, -90))
-    plot(x, y, z, "plt4_zx.png", angle=(0, -90))
-    plot(x, y, z, "plt5_zy.png", angle=(0, 0))
+        plot2(x, z, "plt1_raw.png")
+
+        import scipy
+        from scipy.ndimage import gaussian_filter
+        z = scipy.ndimage.gaussian_filter(z, sigma=args.SIGMA)
+        
+        plot2(x, z, "plt2_smoothed.png")
+
+
+    if plt3d:
+        plot3(x, y, z, "plt1_raw.png")
+
+        import scipy
+        from scipy.ndimage import gaussian_filter
+        z = scipy.ndimage.gaussian_filter(z, sigma=args.SIGMA)
+        
+        plot3(x, y, z, "plt2_gaussian.png")
+
+        plot3(x, y, z, "plt3_xy.png", angle=(90, -90))
+        plot3(x, y, z, "plt4_zx.png", angle=(0, -90))
+        plot3(x, y, z, "plt5_zy.png", angle=(0, 0))
 
 if __name__=='__main__':
     main()
