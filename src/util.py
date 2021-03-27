@@ -58,3 +58,9 @@ class Buffer(object):
 
     def __len__(self):
         return len(self.memory)
+
+    # TODO: implement this with goal location randomization
+    def reset(self):
+        self.memory = []
+        self.position = 0
+
