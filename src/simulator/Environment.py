@@ -87,7 +87,9 @@ class Environment:
         dist = self._agent_dist_to_goal()
         if dist <= self.goal_threshold:
             reward = self.reward_model.reward_goal
+            # TODO: enable random goal generation after figuring out how to reset the model's buffer
             # self.set_new_random_goal()
+            # reset buffer as well
             done = True
 
         # (state, reward, done, None)

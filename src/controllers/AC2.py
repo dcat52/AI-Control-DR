@@ -44,10 +44,11 @@ class AC_Agent:
         self.ACTOR_LR: float
         self.CRITIC_LR: float
         self.PLOT: bool
-        self.TENSORBOARD: bool
+        self.TENSORBOARD: int
         self.DATE_IN_PREFIX: bool
         self.ACTOR_NUM_LAYERS: int
         self.ACTOR_LAYER_WIDTH: int
+        self.count_max: int
         # --------------------------------------
 
         # self.START = 1.0
@@ -71,9 +72,9 @@ class AC_Agent:
             logging.info("********************************")
             logging.info("********************************")
 
-        if self.TENSORBOARD:
-            import controllers.TBLogger as tb
-            self.tb_logger = tb.TBLogger(self.SAVE_PREFIX)
+        if self.TENSORBOARD > 0:
+            import src.controllers.TBLogger as tb
+            self.tb_logger = tb.TBLogger(log_level=self.TENSORBOARD)
 
         state = self.env.reset()
 
@@ -82,8 +83,10 @@ class AC_Agent:
         self.action_bounds = (-1.0, 1.0)
         self.lower_bound, self.upper_bound = self.action_bounds
 
-        self.ou_noise_L = OUActionNoise(mean=np.zeros(1), std_deviation=float(self.STD_DEV) * np.ones(1), theta=float(self.THETA) * np.ones(1))
-        self.ou_noise_R = OUActionNoise(mean=np.zeros(1), std_deviation=float(self.STD_DEV) * np.ones(1), theta=float(self.THETA) * np.ones(1))
+        self.ou_noise_L = OUActionNoise(mean=np.zeros(1), std_deviation=float(self.STD_DEV) * np.ones(1),
+                                        theta=float(self.THETA) * np.ones(1))
+        self.ou_noise_R = OUActionNoise(mean=np.zeros(1), std_deviation=float(self.STD_DEV) * np.ones(1),
+                                        theta=float(self.THETA) * np.ones(1))
 
         self.policy_actor_net = Actor_Model(num_layers=self.ACTOR_NUM_LAYERS, layer_width=self.ACTOR_LAYER_WIDTH)
         self.policy_critic_net = Critic_Model()
@@ -99,6 +102,7 @@ class AC_Agent:
 
         self.steps_done = 0
         self.episode_durations = []
+        self.count_max = 10000
 
     def save_weights(self, directory: str, i: int):
         print("Saving model weights.")
@@ -114,18 +118,12 @@ class AC_Agent:
         sampled_actions = tf.squeeze(self.policy_actor_net(state))
         sampled_actions = sampled_actions.numpy()
 
-        noise_L = self.ou_noise_L()
-        noise_R = self.ou_noise_R()
-        sampled_actions[0] = sampled_actions[0] + noise_L
-        sampled_actions[1] = sampled_actions[1] + noise_R
-
-        # We make sure action is within bounds
-        legal_action = np.clip(sampled_actions, self.lower_bound, self.upper_bound)
-        return legal_action
+        return sampled_actions
 
     def train(self):
 
         cumulative_episode_reward = []
+        ep = 0
 
         for i_episode in range(1, self.NUM_EPISODES+1):
 
@@ -137,29 +135,45 @@ class AC_Agent:
             while not done:
                 # Select and perform an action
                 action = self.make_action(state)
+                log_action = [action[0], action[1]]
+                noise = [self.ou_noise_L(), self.ou_noise_R()]
 
-                next_state, reward, done, info = self.env.step(action)
+                action[0] = action[0] + noise[0]
+                action[1] = action[1] + noise[1]
+                # We make sure action is within bounds
+                legal_action = np.clip(action, self.lower_bound, self.upper_bound)
+
+                next_state, reward, done, info = self.env.step(legal_action)
                 done = int(done)
                 episodic_reward += reward
 
                 # TensorBoard
-                if self.TENSORBOARD:
-                    # actor and critic model input weights logging
-                    try:
-                        self.tb_logger.weights_logger(self.policy_actor_net.get_weights()[0],
-                                                      self.policy_critic_net.get_weights()[0],
-                                                      i_episode * 100 + counter)
-                    except IndexError:
-                        print('something has no weights for some reason')
+                if self.TENSORBOARD >= 1:
+                    ep += 1
+                    critics = None
+
+                    # log level 2
+                    if self.TENSORBOARD >= 2:
+                        state = np.array([state])
+                        legal_action = np.array([legal_action])
+                        policy_critic_estimate = self.policy_critic_net.predict([state, legal_action])
+                        target_critic_estimate = self.target_critic_net.predict([state, legal_action])
+                        critics = [policy_critic_estimate, target_critic_estimate]
+
+                    if self.TENSORBOARD >= 3:
+                        self.tb_logger.weights_logger(self.policy_actor_net, self.policy_critic_net,
+                                                      self.target_actor_net, self.target_critic_net, ep)
+
+                    self.tb_logger.write_logs(self, reward, log_action, noise, critics, ep)
 
                 counter += 1
-                if counter == 100:
+                if counter == self.count_max:
                     done = True
 
                 rewardTensor = tf.convert_to_tensor([reward])
 
                 # Store the transition in memory
-                self.buffer.push(state, action, next_state, rewardTensor)
+                self.buffer.push(state, legal_action, next_state, rewardTensor)
 
                 # Move to the next state
                 state = next_state
@@ -172,10 +186,6 @@ class AC_Agent:
                     self.update_targets()
 
             cumulative_episode_reward.append(episodic_reward)
-
-            # TensorBoard logging for episodic reward
-            if self.TENSORBOARD:
-                self.tb_logger.rewards_logger(episodic_reward, i_episode)
 
             if i_episode % self.PRINT_FREQ == 0:
                 # Mean of last 40 episodes
@@ -223,10 +233,12 @@ class AC_Agent:
                 next_state, reward, done, info = self.env.step(action)
                 done = int(done)
 
+                # TODO: log model outputs
+
                 episodic_reward += reward
 
                 counter += 1
-                if counter == 100:
+                if counter == self.count_max:
                     done = True
 
                 # Move to the next state

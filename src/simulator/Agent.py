@@ -8,7 +8,8 @@ from pymunk import Vec2d
 
 
 class Agent:
-    def __init__(self, _env, mass: float = 10, radius: float = 20, pos_hist_len: int = 5, start_pos: Vec2d = (0, 0)) -> None:
+    def __init__(self, _env, mass: float = 10, radius: float = 20, pos_hist_len: int = 5,
+                 start_pos: Vec2d = (0, 0)) -> None:
         self._env = _env
 
         self.start_pos = start_pos
