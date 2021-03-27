@@ -4,8 +4,7 @@ from pymunk import Vec2d
 class Reward:
 
     def __init__(self, goal: Vec2d = (0, 0)):
-        self.reward_death = -100.0
-        self.reward_goal = 100.0
+        self.reward_goal = 0.0
         self.goal = goal
 
     def generate_reward_map(self):
@@ -16,7 +15,9 @@ class Reward:
 
     def calculate_reward(self, pos: Vec2d):
         length = pos.get_distance(self.goal)
-        return (-length / 100)
+        reward = 1 / length
+        return reward
+        # return (-length / 100)
 
     def set_new_goal(self, goal: Vec2d) -> None:
         self.goal = goal

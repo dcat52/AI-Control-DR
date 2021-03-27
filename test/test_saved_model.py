@@ -27,7 +27,7 @@ args = Namespace(ACTOR_LAYER_WIDTH=256,
                  CRITIC_LR=0.0002,
                  DATE_IN_PREFIX=False,
                  GAMMA=0.99,
-                 NUM_EPISODES=1000,
+                 NUM_EPISODES=1,
                  PLOT=False,
                  PRINT_FREQ=1,
                  SAVE_FREQ=1000,
@@ -35,13 +35,13 @@ args = Namespace(ACTOR_LAYER_WIDTH=256,
                  STD_DEV=0.1,
                  TARGET_UPDATE=1,
                  TAU=0.05,
-                 TENSORBOARD=False,
+                 TENSORBOARD=2,
                  THETA=0.15,
-                 RITE_FREQ=5,
+                 WRITE_FREQ=5,
                  goal_loc=(400, 400),
                  goal_thresh=20,
                  gpu_mem_config=True,
-                 log_level=20,
+                 log_level=5,
                  render=False,
                  start_loc=(300, 300),
                  test_dqn=True,
@@ -54,4 +54,4 @@ ac = AC_Agent(env, args)
 # ac.policy_actor_net = tf.keras.models.load_model(ACTOR_MODEL_DIR)
 # ac.policy_critic_net = tf.keras.models.load_model(CRITIC_MODEL_DIR)
 
-ac.test()
+# ac.test()
