@@ -76,6 +76,7 @@ class Environment:
             self.clock.tick(50)
 
         if self.render_env and self.step_count % self.render_step == 0:
+            pygame.display.set_caption(str(self.step_count))
             self._render()
 
         state_prime = self._get_agent_state()

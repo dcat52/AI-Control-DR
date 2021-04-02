@@ -95,14 +95,14 @@ class AC_Agent:
 
         self.update_targets(tau=1.0)
 
-        self.actor_optimizer = optimizers.Adam(learning_rate=self.ACTOR_LR)
-        self.critic_optimizer = optimizers.Adam(learning_rate=self.CRITIC_LR)
+        self.actor_optimizer = optimizers.Adadelta()
+        self.critic_optimizer = optimizers.Adadelta()
 
         self.buffer = Buffer(capacity=self.BUFFER_CAPACITY)
 
         self.steps_done = 0
         self.episode_durations = []
-        self.count_max = 10000
+        self.count_max = 1000
 
     def save_weights(self, directory: str, i: int):
         print("Saving model weights.")
@@ -136,31 +136,44 @@ class AC_Agent:
                 # Select and perform an action
                 action = self.make_action(state)
                 log_action = [action[0], action[1]]
-                noise = [self.ou_noise_L(), self.ou_noise_R()]
 
+                # Test to try doing intermittent noise exploration
+                if i_episode % 1 == 0 or i_episode < 10:
+                    # noise = np.random.uniform(-0.5, 0.5, 2)
+                    noise = [self.ou_noise_L(), self.ou_noise_R()]
+                else:
+                    noise = [0, 0]
                 action[0] = action[0] + noise[0]
                 action[1] = action[1] + noise[1]
                 # We make sure action is within bounds
                 legal_action = np.clip(action, self.lower_bound, self.upper_bound)
 
+                # clip very small wheel velocities to avoid bad gradients?
+                # if np.abs(legal_action[0]) < 0.1:
+                #     legal_action[0] = 0
+                # if np.abs(legal_action[1]) < 0.1:
+                #     legal_action[1] = 0
+
                 next_state, reward, done, info = self.env.step(legal_action)
                 done = int(done)
                 episodic_reward += reward
 
-                # TensorBoard
+
+                # TensorBoard log level 1 and 2: rewards, actions, and noise
                 if self.TENSORBOARD >= 1:
                     ep += 1
                     critics = None
 
-                    # log level 2
-                    if self.TENSORBOARD >= 2:
-                        state = np.array([state])
-                        legal_action = np.array([legal_action])
-                        policy_critic_estimate = self.policy_critic_net.predict([state, legal_action])
-                        target_critic_estimate = self.target_critic_net.predict([state, legal_action])
-                        critics = [policy_critic_estimate, target_critic_estimate]
+                    # if self.TENSORBOARD >= 2:
 
                     if self.TENSORBOARD >= 3:
+                        log_state = np.array([state])
+                        log_action = np.array([legal_action])
+                        policy_critic_estimate = self.policy_critic_net.predict([log_state, log_action])
+                        target_critic_estimate = self.target_critic_net.predict([log_state, log_action])
+                        critics = [policy_critic_estimate, target_critic_estimate]
+
+                    if self.TENSORBOARD >= 4:
                         self.tb_logger.weights_logger(self.policy_actor_net, self.policy_critic_net,
                                                       self.target_actor_net, self.target_critic_net, ep)
 
@@ -190,8 +203,8 @@ class AC_Agent:
             if i_episode % self.PRINT_FREQ == 0:
                 # Mean of last 40 episodes
                 avg_reward = np.mean(cumulative_episode_reward[-10:])
-                print("Episode: {:3d} -- Current Reward: {:9.2f} -- Avg Reward is: {:9.2f}".format(
-                    i_episode, episodic_reward, avg_reward
+                print("Episode: {:3d} -- Current Avg Reward: {:9.5f} -- Episode Moving Avg Reward is: {:9.2f}".format(
+                    i_episode, episodic_reward/counter, avg_reward
                     ))
 
             if i_episode % self.WRITE_FREQ == 0:
@@ -245,7 +258,7 @@ class AC_Agent:
                 state = next_state
 
             final_episode_reward.append(reward)
-            cumulative_episode_reward.append(episodic_reward)
+            cumulative_episode_reward.append(episodic_reward / counter)
 
             # TensorBoard logging for episodic reward
             if self.TENSORBOARD:
