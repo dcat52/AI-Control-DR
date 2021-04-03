@@ -22,6 +22,7 @@ class Environment:
 
         self.space = pymunk.Space()
         self.friction_scalar = 0.80
+        self.friction_angular_scalar = 0.60
 
         self.action_freq = 3 # in Hz
 
@@ -75,7 +76,7 @@ class Environment:
             pygame.display.flip()
             self.clock.tick(50)
 
-        if self.render_env and self.step_count % self.render_step == 0:
+        if self.render_env and self.step_count % 50 == 0:
             pygame.display.set_caption(str(self.step_count))
             self._render()
 
@@ -124,7 +125,8 @@ class Environment:
 
     def _assess_friction(self) -> None:
         self.agent.body.velocity *= self.friction_scalar
-        self.agent.body.angular_velocity *= self.friction_scalar
+        self.agent.body.angular_velocity *= self.friction_angular_scalar
+
 
     def _add_static_scenery(self) -> True:
         # walls

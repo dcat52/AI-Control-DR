@@ -1,4 +1,5 @@
 from queue import Queue
+from math import cos, sin
 
 import numpy as np
 import pymunk
@@ -8,7 +9,7 @@ from pymunk import Vec2d
 
 
 class Agent:
-    def __init__(self, _env, mass: float = 10, radius: float = 20, pos_hist_len: int = 5,
+    def __init__(self, _env, mass: float = 10, radius: float = 20, pos_hist_len: int = 2,
                  start_pos: Vec2d = (0, 0)) -> None:
         self._env = _env
 
@@ -48,20 +49,24 @@ class Agent:
 
         pos_hist = list(self.pos_history.queue)
         delta1 = pos_hist[-1] - pos_hist[0]
+
+        a = self.get_angle()
+        r = np.array([[cos(a), sin(a)], [-sin(a), cos(a)]])
+        delta1 = np.array(delta1)
+        delta1 = r.dot(delta1) 
         ang_hist = list(self.ang_history.queue)
         delta2 = ang_hist[-1] - ang_hist[0]
 
         observation = self._sense()
         # state = np.append(observation, list(self.pos_history.queue))
-
         state = np.append(observation, delta1/20)
         state = np.append(state, delta2)
 
         return state
 
     def set_motors(self, velocities: tuple) -> None:
-        self.body.apply_force_at_local_point((20000 * velocities[0], 0), (0, -20))
-        self.body.apply_force_at_local_point((20000 * velocities[1], 0), (0, 20))
+        self.body.apply_force_at_local_point((20000 * velocities[0], 0), (0, -10))
+        self.body.apply_force_at_local_point((20000 * velocities[1], 0), (0, 10))
 
     def get_pos(self) -> Vec2d:
         return self.body.position
@@ -71,8 +76,13 @@ class Agent:
 
     def _sense(self) -> np.ndarray:
         # obs = self._env._env_info_from_agent(self.body)
-        sensors = np.array(self.get_pos()) / 500
-        sensors = np.append(sensors, self.get_angle()/100)
+        a = self.get_angle()
+        r = np.array([[cos(a), sin(a)], [-sin(a), cos(a)]])
+        v = np.array(self._env.goal - self.get_pos())
+        sensors = r.dot(v)
+        sensors = sensors / 500
+        # sensors = np.array(self.get_pos()) / 500
+        # sensors = np.append(sensors, self.get_angle()/100)
         return sensors
 
     def _set_pos(self, new_pos: Vec2d) -> None:
