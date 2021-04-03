@@ -1,11 +1,11 @@
 import pygame
 
-from simulator.Environment import Environment
+from src.simulator.Environment import Environment
 
 env = Environment(robot_start=(300, 300), goal=(400, 400))
 
 import numpy as np
-np.set_printoptions(precision=2, linewidth=180)
+np.set_printoptions(precision=4, linewidth=180)
 class Keyboard_Controller:
     def __init__(self, MODE):
         self.left = 0
@@ -24,11 +24,11 @@ class Keyboard_Controller:
 
             state = env.step((self.left, self.right))
             s = state[0]
-            for i in range(0,6):
+            for i in range(0,len(state)):
                 if s[i] > self.max_s[i]:
                     self.max_s[i] = s[i]
 
-            print(s, self.max_s)
+            print(s)
 
 
             
@@ -53,17 +53,17 @@ class Keyboard_Controller:
 
         elif MODE == "WASD":
             if keys[pygame.K_w]:
-                self.left = 1
-                self.right = 1
-            if keys[pygame.K_s]:
-                self.left = -1
-                self.right = -1
-            if keys[pygame.K_a]:
-                self.left = -.5
-                self.right = .5
-            if keys[pygame.K_d]:
                 self.left = .5
+                self.right = .5
+            if keys[pygame.K_s]:
+                self.left = -.5
                 self.right = -.5
+            if keys[pygame.K_a]:
+                self.left = -.1
+                self.right = .1
+            if keys[pygame.K_d]:
+                self.left = .1
+                self.right = -.1
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
