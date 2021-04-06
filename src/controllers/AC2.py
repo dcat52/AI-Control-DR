@@ -95,8 +95,8 @@ class AC_Agent:
 
         self.update_targets(tau=1.0)
 
-        self.actor_optimizer = optimizers.Adadelta()
-        self.critic_optimizer = optimizers.Adadelta()
+        self.actor_optimizer = optimizers.Adam(learning_rate=self.ACTOR_LR)
+        self.critic_optimizer = optimizers.Adam(learning_rate=self.CRITIC_LR)
 
         self.buffer = Buffer(capacity=self.BUFFER_CAPACITY)
 
@@ -138,7 +138,7 @@ class AC_Agent:
                 log_action = [action[0], action[1]]
 
                 # Test to try doing intermittent noise exploration
-                if i_episode % 1 == 0 or i_episode < 10:
+                if self.env.noise_option:
                     # noise = np.random.uniform(-0.5, 0.5, 2)
                     noise = [self.ou_noise_L(), self.ou_noise_R()]
                 else:
@@ -164,11 +164,10 @@ class AC_Agent:
                     ep += 1
                     critics = None
 
-                    # if self.TENSORBOARD >= 2:
-
+                    if self.TENSORBOARD >= 2:
+                        log_state = np.array(state)
+                        log_action = np.array(legal_action)
                     if self.TENSORBOARD >= 3:
-                        log_state = np.array([state])
-                        log_action = np.array([legal_action])
                         policy_critic_estimate = self.policy_critic_net.predict([log_state, log_action])
                         target_critic_estimate = self.target_critic_net.predict([log_state, log_action])
                         critics = [policy_critic_estimate, target_critic_estimate]

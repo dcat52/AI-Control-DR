@@ -32,6 +32,8 @@ class Environment:
         self.render_env = render
         self.called_render = False
 
+        self.noise_option = True
+
         # pygame
         pygame.init()
         if render:
@@ -160,6 +162,10 @@ class Environment:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_PERIOD:
                 self.render_step = min(self.render_step+1, 10)
                 print("Render step is {}".format(self.render_step))
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_i:
+                self.noise_option = True
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_o:
+                self.noise_option = False
 
     def set_not_running(self):
         self.running = False
