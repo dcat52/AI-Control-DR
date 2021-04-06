@@ -10,7 +10,7 @@ from src.simulator.Reward import Reward
 
 class Environment:
     
-    def __init__(self, robot_start: Vec2d = (0, 0), goal: Vec2d = (2, 2), goal_threshold: float = 10.0, render: bool = True, render_step: int = 5) -> None:
+    def __init__(self, robot_start: Vec2d = (0, 0), goal: Vec2d = (2, 2), goal_threshold: float = 10.0, render: bool = True, render_step: int = 5, init: bool = True) -> None:
         # Physics
         # Time step
         self.dt = 1.0 / 60.0
@@ -34,13 +34,13 @@ class Environment:
 
         self.noise_option = True
 
-        # pygame
-        pygame.init()
-        if render:
-            self.screen = pygame.display.set_mode((600, 600))
-            self.draw_options = pymunk.pygame_util.DrawOptions(self.screen)
-            self.space.debug_draw(self.draw_options)
-        self.clock = pygame.time.Clock()
+        if init:
+            pygame.init()
+            if render:
+                self.screen = pygame.display.set_mode((600, 600))
+                self.draw_options = pymunk.pygame_util.DrawOptions(self.screen)
+                self.space.debug_draw(self.draw_options)
+            self.clock = pygame.time.Clock()
 
         # Static barrier walls (lines) that the balls bounce off of
         self._add_static_scenery()
@@ -58,7 +58,7 @@ class Environment:
             self._render()
 
     def reset(self) -> None:
-        self.__init__(robot_start=self.robot_start, goal=self.goal, goal_threshold=self.goal_threshold, render=self.render_env, render_step=self.render_step)
+        self.__init__(robot_start=self.robot_start, goal=self.goal, goal_threshold=self.goal_threshold, render=self.render_env, render_step=self.render_step, init=False)
         return (self._get_agent_state())
 
     def step(self, action) -> None:
@@ -164,8 +164,10 @@ class Environment:
                 print("Render step is {}".format(self.render_step))
             if event.type == pygame.KEYDOWN and event.key == pygame.K_i:
                 self.noise_option = True
+                print("Noise option set True")
             if event.type == pygame.KEYDOWN and event.key == pygame.K_o:
                 self.noise_option = False
+                print("Noise option set False")
 
     def set_not_running(self):
         self.running = False
