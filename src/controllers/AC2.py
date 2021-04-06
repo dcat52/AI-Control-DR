@@ -113,10 +113,11 @@ class AC_Agent:
 
     def make_action(self, state):
 
-        state = state[None, :]
+        state = np.expand_dims(state, axis=0)
 
-        sampled_actions = tf.squeeze(self.policy_actor_net(state))
+        sampled_actions = self.policy_actor_net(state)
         sampled_actions = sampled_actions.numpy()
+        sampled_actions = np.squeeze(sampled_actions, axis=0)
 
         return sampled_actions
 
@@ -196,6 +197,11 @@ class AC_Agent:
                 # Update the target network
                 if counter % self.TARGET_UPDATE == 0:
                     self.update_targets()
+
+            if self.TENSORBOARD >=2:
+                log_ep_reward = np.array(episodic_reward)
+
+            self.tb_logger.write_ep_logs(episodic_reward, i_episode)
 
             cumulative_episode_reward.append(episodic_reward)
 
