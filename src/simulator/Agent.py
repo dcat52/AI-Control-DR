@@ -6,6 +6,7 @@ import pymunk
 import pymunk.pygame_util
 from pygame.color import THECOLORS
 from pymunk import Vec2d
+import random
 
 
 class Agent:
@@ -25,6 +26,7 @@ class Agent:
         self.body = pymunk.Body(self.mass, self.inertia)
         self.body.position = self.start_pos
         self.shape = pymunk.Circle(self.body, self.radius)
+        self.body._set_angle(random.randint(0,628)/100)
         self.shape.color = THECOLORS['red']
         self.shape.elasticity = .5
         self.shape.friction = 0.99

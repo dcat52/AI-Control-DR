@@ -7,13 +7,13 @@ class Actor_Model(tf.keras.Model):
         super(Actor_Model, self).__init__()
 
         self.lower_bound, self.upper_bound = action_bounds
+        self.state_length = state_length
 
         # Initialize weights between -3e-3 and 3-e3
         self.last_init = tf.random_uniform_initializer(minval=-0.003, maxval=0.003)
 
         self.hl = []
 
-        # self.inp = layers.Input(shape=(state_length,))
         self.inp = layers.Dense(state_length, activation=nn.relu)
         for i in range(num_layers):
             layer = layers.Dense(layer_width, activation=nn.relu)
@@ -23,6 +23,7 @@ class Actor_Model(tf.keras.Model):
 
     @tf.function
     def call(self, inputs):
+        # inp = layers.Input(shape=(self.state_length,))
         s1 = self.inp(inputs)
 
         temp = s1
@@ -30,14 +31,13 @@ class Actor_Model(tf.keras.Model):
         for i in range(len(self.hl)):
             temp = self.hl[i](temp)
 
-        if(len(self.hl) == 0):
-            hl_out = s1
+        # if(len(self.hl) == 0):
+        #     hl_out = s1
 
         # s2 = self.hl1(s1)
         # s3 = self.hl2(s2)
         s4 = self.out(temp)
-        s5 = s4 * self.upper_bound
-        return s5
+        return s4
 
 class Critic_Model(tf.keras.Model):
     def __init__(self, state_length=6, action_length=2):
