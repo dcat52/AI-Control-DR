@@ -40,7 +40,7 @@ class Actor_Model(tf.keras.Model):
         return s4
 
 class Critic_Model(tf.keras.Model):
-    def __init__(self, state_length=6, action_length=2):
+    def __init__(self, state_length=6, action_length=2, max_layer_width=256):
         super(Critic_Model, self).__init__()
         # State as input
         # self.state_input = layers.Input(shape=(state_length))
@@ -55,8 +55,8 @@ class Critic_Model(tf.keras.Model):
 
         # Both are passed through seperate layer before concatenating
         self.combined_input = layers.Concatenate()
-        self.combined_hl1 = layers.Dense(256, activation=nn.relu)
-        self.combined_hl2 = layers.Dense(256, activation=nn.relu)
+        self.combined_hl1 = layers.Dense(max_layer_width, activation=nn.relu)
+        self.combined_hl2 = layers.Dense(max_layer_width, activation=nn.relu)
         self.out = layers.Dense(1)
 
     @tf.function

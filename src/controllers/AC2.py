@@ -48,6 +48,7 @@ class AC_Agent:
         self.DATE_IN_PREFIX: bool
         self.ACTOR_NUM_LAYERS: int
         self.ACTOR_LAYER_WIDTH: int
+        self.CRITIC_LAYER_WIDTH: int
         self.count_max: int
         # --------------------------------------
 
@@ -89,9 +90,9 @@ class AC_Agent:
                                         theta=float(self.THETA) * np.ones(1))
 
         self.policy_actor_net = Actor_Model(num_layers=self.ACTOR_NUM_LAYERS, layer_width=self.ACTOR_LAYER_WIDTH)
-        self.policy_critic_net = Critic_Model()
+        self.policy_critic_net = Critic_Model(max_layer_Width=self.CRITIC_LAYER_WIDTH)
         self.target_actor_net = Actor_Model(num_layers=self.ACTOR_NUM_LAYERS, layer_width=self.ACTOR_LAYER_WIDTH)
-        self.target_critic_net = Critic_Model()
+        self.target_critic_net = Critic_Model(max_layer_Width=self.CRITIC_LAYER_WIDTH)
 
         self.update_targets(tau=1.0)
 

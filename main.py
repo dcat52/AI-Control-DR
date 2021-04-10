@@ -37,8 +37,9 @@ def parse():
     parser.add_argument('--load_prefix',     dest="LOAD_PREFIX",     default="data", type=str,   help='Location to load model weights from')
     parser.add_argument('--seed',            dest="SEED",            default=-1, type=int,       help='Set the default seed value, -1 is random seed.')
 
-    parser.add_argument('--actor_layer_width',  dest="ACTOR_LAYER_WIDTH", default=256,  type=int, help='Actor - Width of layer')
-    parser.add_argument('--actor_num_layers',   dest="ACTOR_NUM_LAYERS",  default=2,    type=int, help='Actor - Number layers deep')
+    parser.add_argument('--actor_layer_width',  dest="ACTOR_LAYER_WIDTH",  default=256,  type=int, help='Actor - Width of layer')
+    parser.add_argument('--actor_num_layers',   dest="ACTOR_NUM_LAYERS",   default=2,    type=int, help='Actor - Number layers deep')
+    parser.add_argument('--critic_layer_width', dest="CRITIC_LAYER_WIDTH", default=256,  type=int, help='Critic - Width of layer')
 
     # environment settings
     parser.add_argument('--start_loc',      default=[300, 300], nargs='+', type=int,    help='Start location in format --start_loc x y')
