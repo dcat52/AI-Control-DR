@@ -33,6 +33,7 @@ class Environment:
         self.called_render = False
 
         self.noise_option = True
+        self.randomize_goal_option = False
 
         if init:
             pygame.init()
@@ -90,10 +91,11 @@ class Environment:
 
         dist = self._agent_dist_to_goal()
         if dist <= self.goal_threshold:
-            reward = self.reward_model.reward_goal
+            reward += self.reward_model.reward_goal
             # TODO: enable random goal generation after figuring out how to reset the model's buffer
-            # self.set_new_random_goal()
-            # reset buffer as well
+            if self.randomize_goal_option:
+                self.set_new_random_goal()
+                # reset buffer as well?
             done = True
 
         # (state, reward, done, None)
@@ -129,7 +131,6 @@ class Environment:
         self.agent.body.velocity *= self.friction_scalar
         self.agent.body.angular_velocity *= self.friction_angular_scalar
 
-
     def _add_static_scenery(self) -> True:
         # walls
         static_lines = [
@@ -162,12 +163,14 @@ class Environment:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_PERIOD:
                 self.render_step = min(self.render_step+1, 10)
                 print("Render step is {}".format(self.render_step))
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_i:
-                self.noise_option = True
-                print("Noise option set True")
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_o:
-                self.noise_option = False
-                print("Noise option set False")
+            # Toggle for motor input noise
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_n:
+                self.noise_option = not self.noise_option
+                print("Motor force noise added: " + str(self.randomize_goal_option))
+            # Toggle for randomizing goal location on next attainment
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_r:
+                self.randomize_goal_option = not self.randomize_goal_option
+                print("Randomizing goal after attainment: " + str(self.randomize_goal_option))
 
     def set_not_running(self):
         self.running = False

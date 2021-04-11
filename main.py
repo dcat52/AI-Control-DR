@@ -22,7 +22,7 @@ def parse():
     parser.add_argument('--save_freq',       dest="SAVE_FREQ",       default=100, type=int,     help='Save model weights every n iterations')
     parser.add_argument('--batch_size',      dest="BATCH_SIZE",      default=2000, type=int,       help='Batch size')
     parser.add_argument('--buffer_capacity', dest="BUFFER_CAPACITY", default=40000, type=int,    help='Buffer capacity')
-    parser.add_argument('--episodes',        dest="NUM_EPISODES",    default=1000, type=int,     help='Number of episodes to run')
+    parser.add_argument('--episodes', '--ep',dest="NUM_EPISODES",    default=1000, type=int,     help='Number of episodes to run')
     parser.add_argument('--update_freq',     dest="TARGET_UPDATE",   default=1, type=int,        help='Update target network every n iterations')
     parser.add_argument('--tau',             dest="TAU",             default=0.05, type=float,   help='Update ratio of target network')
     parser.add_argument('--gamma',           dest="GAMMA",           default=0.99, type=float,   help='Future reward decay')
