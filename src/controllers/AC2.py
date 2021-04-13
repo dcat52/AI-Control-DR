@@ -10,7 +10,7 @@ from itertools import count
 import tensorflow as tf
 from tensorflow.keras import layers, optimizers
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 
 from src.controllers.Models import Actor_Model, Critic_Model
 from src.util import OUActionNoise, Buffer, Transition
@@ -90,9 +90,9 @@ class AC_Agent:
                                         theta=float(self.THETA) * np.ones(1))
 
         self.policy_actor_net = Actor_Model(num_layers=self.ACTOR_NUM_LAYERS, layer_width=self.ACTOR_LAYER_WIDTH)
-        self.policy_critic_net = Critic_Model(max_layer_Width=self.CRITIC_LAYER_WIDTH)
+        self.policy_critic_net = Critic_Model(max_layer_width=self.CRITIC_LAYER_WIDTH)
         self.target_actor_net = Actor_Model(num_layers=self.ACTOR_NUM_LAYERS, layer_width=self.ACTOR_LAYER_WIDTH)
-        self.target_critic_net = Critic_Model(max_layer_Width=self.CRITIC_LAYER_WIDTH)
+        self.target_critic_net = Critic_Model(max_layer_width=self.CRITIC_LAYER_WIDTH)
 
         self.update_targets(tau=1.0)
 
@@ -202,7 +202,7 @@ class AC_Agent:
             if self.TENSORBOARD >=2:
                 log_ep_reward = np.array(episodic_reward)
 
-            self.tb_logger.write_ep_logs(episodic_reward, i_episode)
+                self.tb_logger.write_ep_logs(episodic_reward, i_episode)
 
             cumulative_episode_reward.append(episodic_reward)
 
