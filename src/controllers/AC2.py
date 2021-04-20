@@ -23,12 +23,9 @@ class AC_Agent:
 
         self.args = args
         args = vars(args)
-
         self.env = env
 
         # --------------------------------------
-        # NOTE: These parameters are overwritten when run by `main.py`
-        # NOTE: The defaults here match those by `main.py`
         self.PRINT_FREQ: int
         self.WRITE_FREQ: int
         self.SAVE_FREQ: int
@@ -49,7 +46,6 @@ class AC_Agent:
         self.ACTOR_NUM_LAYERS: int
         self.ACTOR_LAYER_WIDTH: int
         self.CRITIC_LAYER_WIDTH: int
-        self.count_max: int
         # --------------------------------------
 
         # self.START = 1.0
@@ -104,6 +100,8 @@ class AC_Agent:
         self.steps_done = 0
         self.episode_durations = []
         self.count_max = 1000
+        self.ep_epsilon = self.episode_durations
+        self.count_epsilon = self.count_max
 
     def save_weights(self, directory: str, i: int):
         print("Saving model weights.")
@@ -135,11 +133,12 @@ class AC_Agent:
             done = False
 
             while not done:
-                # Select and perform an action
-                action = self.make_action(state)
+                # Epsilon: 'noise' episodes
+                if not i_episode % self.ep_epsilon == 0 or counter % self.count_epsilon == 0:
+                    # Select and perform an action
+                    action = self.make_action(state)
                 log_action = [action[0], action[1]]
 
-                # Test to try doing intermittent noise exploration
                 if self.env.noise_option:
                     # noise = np.random.uniform(-0.5, 0.5, 2)
                     noise = [self.ou_noise_L(), self.ou_noise_R()]

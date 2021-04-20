@@ -10,7 +10,9 @@ from src.simulator.Reward import Reward
 
 class Environment:
     
-    def __init__(self, robot_start: Vec2d = (0, 0), goal: Vec2d = (2, 2), goal_threshold: float = 10.0, render: bool = True, render_step: int = 5, init: bool = True) -> None:
+    def __init__(self, robot_start: Vec2d = (0, 0), goal: Vec2d = (2, 2), goal_threshold: float = 10.0,
+                 noise_option: bool = True, randomize_goal_option: bool = True, carrot_reward: bool = False,
+                 render: bool = True, render_step: int = 5, init: bool = True) -> None:
         # Physics
         # Time step
         self.dt = 1.0 / 60.0
@@ -32,8 +34,9 @@ class Environment:
         self.render_env = render
         self.called_render = False
 
-        self.noise_option = True
-        self.randomize_goal_option = False
+        self.noise_option = noise_option
+        self.randomize_goal_option = randomize_goal_option
+        self.carrot_reward = carrot_reward
 
         if init:
             pygame.init()
@@ -49,7 +52,7 @@ class Environment:
         agent_shape = self.agent.get_shape()
         self.space.add(agent_body, agent_shape)
 
-        self.reward_model = Reward(goal=goal)
+        self.reward_model = Reward(goal=goal, carrot_reward=carrot_reward)
         self.goal = goal
         self.goal_threshold = goal_threshold
 
@@ -59,7 +62,9 @@ class Environment:
             self._render()
 
     def reset(self) -> None:
-        self.__init__(robot_start=self.robot_start, goal=self.goal, goal_threshold=self.goal_threshold, render=self.render_env, render_step=self.render_step, init=False)
+        self.__init__(robot_start=self.robot_start, goal=self.goal, goal_threshold=self.goal_threshold,
+                      noise_option=self.noise_option, randomize_goal_option=self.randomize_goal_option,
+                      carrot_reward=self.carrot_reward, render=self.render_env, render_step=self.render_step, init=False)
         return (self._get_agent_state())
 
     def step(self, action) -> None:
@@ -92,24 +97,19 @@ class Environment:
         dist = self._agent_dist_to_goal()
         if dist <= self.goal_threshold:
             reward += self.reward_model.reward_goal
-            # TODO: enable random goal generation after figuring out how to reset the model's buffer
             if self.randomize_goal_option:
                 self.set_new_random_goal()
-                # reset buffer as well?
             done = True
 
         # (state, reward, done, None)
         return state_prime, reward, done, None
-
-    # def _make_action(self, action) -> tuple:
-    #     self.agent.apply_velocities(action)
 
     def set_new_goal(self, goal: Vec2d) -> None:
         self.goal = goal
         self.reward_model.set_new_goal(goal)
 
     def set_new_random_goal(self) -> None:
-        goal = np.random.randint(100, 500, (2))
+        goal = np.random.randint(110, 490, (2))
         self.goal = goal
         self.reward_model.set_new_goal(goal)
 
@@ -166,7 +166,7 @@ class Environment:
             # Toggle for motor input noise
             if event.type == pygame.KEYDOWN and event.key == pygame.K_n:
                 self.noise_option = not self.noise_option
-                print("Motor force noise added: " + str(self.randomize_goal_option))
+                print("Motor force noise added: " + str(self.noise_option))
             # Toggle for randomizing goal location on next attainment
             if event.type == pygame.KEYDOWN and event.key == pygame.K_r:
                 self.randomize_goal_option = not self.randomize_goal_option
@@ -194,32 +194,3 @@ class Environment:
         pygame.draw.circle(self.screen, (0, 150, 0), self.goal, 10)
         self.space.debug_draw(self.draw_options)
 
-if __name__ == "__main__":
-
-    import time
-
-    env = Environment()
-
-    action_list = [
-        (1,1),
-        (1,1),
-        (1,1),
-        (0,0),
-        (0,0),
-        (0,1),
-        (0,0),
-        (1,1),
-        (1,1),
-        (1,0),
-        (1,0),
-        (1,0),
-        (1,0),
-        (0,0),
-        (0,0)
-    ]
-
-    for a in action_list:
-        env.step(a)
-        time.sleep(.05)
-
-    time.sleep(5)
