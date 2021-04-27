@@ -49,13 +49,20 @@ class Agent:
         self.ang_history.get(block=False)
         self.ang_history.put(self.get_angle(), block=False)
 
+        # get pos history
         pos_hist = list(self.pos_history.queue)
         delta1 = pos_hist[-1] - pos_hist[0]
 
+        # get agent's angle
         a = self.get_angle()
+        # calculate roation matrix
         r = np.array([[cos(a), sin(a)], [-sin(a), cos(a)]])
+        # convert delta pos to np array
         delta1 = np.array(delta1)
-        delta1 = r.dot(delta1) 
+        # multiply r * delta1 (frame transformation)
+        delta1 = r.dot(delta1)
+
+        # get angle history
         ang_hist = list(self.ang_history.queue)
         delta2 = ang_hist[-1] - ang_hist[0]
 
@@ -77,14 +84,17 @@ class Agent:
         return self.body.angle
 
     def _sense(self) -> np.ndarray:
-        # obs = self._env._env_info_from_agent(self.body)
+        # get agent's angle
         a = self.get_angle()
+        # calculate roation matrix
         r = np.array([[cos(a), sin(a)], [-sin(a), cos(a)]])
+        # get delta to goal as np array
         v = np.array(self._env.goal - self.get_pos())
+        # multiply r * v (frame transformation)
         sensors = r.dot(v)
+        # scale to less
         sensors = sensors / 500
-        # sensors = np.array(self.get_pos()) / 500
-        # sensors = np.append(sensors, self.get_angle()/100)
+        
         return sensors
 
     def _set_pos(self, new_pos: Vec2d) -> None:
