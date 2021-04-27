@@ -99,7 +99,7 @@ class AC_Agent:
         self.steps_done = 0
         self.episode_durations = 1000
         self.count_max = 100
-        self.ep_epsilon = self.NUM_EPISODES
+        self.ep_epsilon = self.episode_durations
         self.count_epsilon = self.count_max
 
     def save_weights(self, directory: str, i: int):
@@ -129,8 +129,8 @@ class AC_Agent:
             done = False
 
             while not done:
-                # Epsilon: 'noise' episodes
-                if not i_episode % self.ep_epsilon == 0 or counter % self.count_epsilon == 0:
+                # Epsilon flag: intermittent 'noise-only' episodes
+                if not i_episode % self.ep_epsilon == 0 or not counter % self.count_epsilon == 0 or not self.env.noise_option:
                     # Select and perform an action
                     action = self.make_action(state)
                 log_action = [action[0], action[1]]
