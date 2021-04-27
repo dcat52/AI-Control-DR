@@ -2,8 +2,8 @@ from src.util import OUActionNoise
 import numpy as np
 import matplotlib.pyplot as plt
 
-std = 0.1
-theta = 0.05
+std = .9
+theta = 0.1
 
 ou = OUActionNoise(mean=np.zeros(1), std_deviation=float(std) * np.ones(1), theta=float(theta) * np.ones(1))
 

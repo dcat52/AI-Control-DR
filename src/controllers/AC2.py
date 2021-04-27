@@ -24,7 +24,6 @@ class AC_Agent:
         self.args = args
         args = vars(args)
         self.env = env
-
         # --------------------------------------
         self.PRINT_FREQ: int
         self.WRITE_FREQ: int
@@ -98,8 +97,8 @@ class AC_Agent:
         self.buffer = Buffer(capacity=self.BUFFER_CAPACITY)
 
         self.steps_done = 0
-        self.episode_durations = []
-        self.count_max = 1000
+        self.episode_durations = 1000
+        self.count_max = 100
         self.ep_epsilon = self.episode_durations
         self.count_epsilon = self.count_max
 
@@ -111,13 +110,10 @@ class AC_Agent:
         # self.policy_critic_net.save("{}/{:04d}_policy_critic_net".format(directory, i),  save_format="tf")
 
     def make_action(self, state):
-
         state = np.expand_dims(state, axis=0)
-
         sampled_actions = self.policy_actor_net(state)
         sampled_actions = sampled_actions.numpy()
         sampled_actions = np.squeeze(sampled_actions, axis=0)
-
         return sampled_actions
 
     def train(self):
@@ -133,8 +129,8 @@ class AC_Agent:
             done = False
 
             while not done:
-                # Epsilon: 'noise' episodes
-                if not i_episode % self.ep_epsilon == 0 or counter % self.count_epsilon == 0:
+                # Epsilon flag: intermittent 'noise-only' episodes
+                if not i_episode % self.ep_epsilon == 0 or not counter % self.count_epsilon == 0 or not self.env.noise_option:
                     # Select and perform an action
                     action = self.make_action(state)
                 log_action = [action[0], action[1]]
@@ -194,9 +190,9 @@ class AC_Agent:
                 # Perform one step of the optimization (on the target network)
                 self.learn()
 
-                # Update the target network
-                if counter % self.TARGET_UPDATE == 0:
-                    self.update_targets()
+            # Update the target network
+            if counter % self.TARGET_UPDATE == 0:
+                self.update_targets()
 
             if self.TENSORBOARD >=2:
                 log_ep_reward = np.array(episodic_reward)
@@ -219,14 +215,6 @@ class AC_Agent:
 
             if i_episode % self.SAVE_FREQ == 0:
                 self.save_weights(self.SAVE_PREFIX + "_weights", i_episode)
-
-        if self.PLOT:
-            # Plotting graph
-            # Episodes versus Avg. Rewards
-            plt.plot(cumulative_episode_reward)
-            plt.xlabel("Episode")
-            plt.ylabel("Avg. Epsiodic Reward")
-            plt.show()
 
     def test(self):
         # Load saved model weights
@@ -281,44 +269,28 @@ class AC_Agent:
                     f.write("{},{}\n".format(i_episode, episodic_reward))
                 pass
 
-        if self.PLOT:
-            # Plotting graph
-            # Episodes versus Avg. Rewards
-            plt.plot(cumulative_episode_reward)
-            plt.xlabel("Episode")
-            plt.ylabel("Avg. Epsiodic Reward")
-            plt.show()
-
     @tf.function
     def update(self, state_batch, action_batch, reward_batch, next_state_batch,):
         # Training and updating Actor & Critic networks.
-        # See Pseudo Code.
         with tf.GradientTape() as tape:
             target_actions = self.target_actor_net(next_state_batch, training=True)
-            y = reward_batch + self.GAMMA * self.target_critic_net(
-                [next_state_batch, target_actions], training=True
-            )
+            y = reward_batch + self.GAMMA * self.target_critic_net([next_state_batch, target_actions], training=True)
             critic_value = self.policy_critic_net([state_batch, action_batch], training=True)
             critic_loss = tf.math.reduce_mean(tf.math.square(y - critic_value))
 
         critic_grad = tape.gradient(critic_loss, self.policy_critic_net.trainable_variables)
-        self.critic_optimizer.apply_gradients(
-            zip(critic_grad, self.policy_critic_net.trainable_variables)
-        )
+        self.critic_optimizer.apply_gradients(zip(critic_grad, self.policy_critic_net.trainable_variables))
 
         with tf.GradientTape() as tape:
             actions = self.policy_actor_net(state_batch, training=True)
             critic_value = self.policy_critic_net([state_batch, actions], training=True)
-            # Used `-value` as we want to maximize the value given
-            # by the critic for our actions
             actor_loss = -tf.math.reduce_mean(critic_value)
 
         actor_grad = tape.gradient(actor_loss, self.policy_actor_net.trainable_variables)
-        self.actor_optimizer.apply_gradients(
-            zip(actor_grad, self.policy_actor_net.trainable_variables)
-        )
+        self.actor_optimizer.apply_gradients(zip(actor_grad, self.policy_actor_net.trainable_variables))
 
     def learn(self):
+        # Retrieves a batch of training samples from the buffer and begins learning process
         if len(self.buffer) < self.BATCH_SIZE:
             return
 
