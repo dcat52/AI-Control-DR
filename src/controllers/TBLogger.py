@@ -11,9 +11,11 @@ class TBLogger:
         log_dir = directory_prefix + "_logs/" + datetime.datetime.now().strftime("%Y%m%d-%H%M")
         # log_dir = directory_prefix + "_logs/"
 
-        # Log level 1: episodic rewards only
+        # Log level 1: rewards and steps-to-goal only
         if self.log_level >= 1:
-            self.rewards_writer = tf.summary.create_file_writer(logdir=log_dir)
+            self.rewards_writer = tf.summary.create_file_writer(logdir=log_dir + "/rewards")
+            self.ep_reward_writer = tf.summary.create_file_writer(logdir=log_dir + "/episode_reward")
+            self.ep_steps_writer = tf.summary.create_file_writer(logdir=log_dir + "/steps_to_goal")
 
         # Log level 2: additional logging for actions and noise
         if self.log_level >= 2:
@@ -25,7 +27,6 @@ class TBLogger:
             self.actions_l_writer = tf.summary.create_file_writer(logdir=log_dir_net_outputs + "action_L")
             self.actions_r_writer = tf.summary.create_file_writer(logdir=log_dir_net_outputs + "action_R")
 
-            self.ep_reward_writer = tf.summary.create_file_writer(logdir=log_dir_net_outputs + "episode_reward")
 
         # Log level 3: additional output from target_actor and both critic models
         if self.log_level >= 2:
@@ -101,18 +102,18 @@ class TBLogger:
             self.weights_logger(policy_actor_model, policy_critic_model,
                                 target_actor_model, target_critic_model, ep)
 
-    def write_ep_logs(self, ep_reward, i_episode):
-        if self.log_level > 0:
-            self.ep_reward_logger(ep_reward, i_episode)
-
-    def ep_reward_logger(self, ep_reward, i_episode):
+    def write_ep_reward_logs(self, ep_reward, i_episode):
         with self.ep_reward_writer.as_default():
             tf.summary.scalar('episodic reward', ep_reward, step=i_episode)
+
+    def write_ep_steps_logs(self, counter, i_episode):
+        with self.ep_steps_writer.as_default():
+            tf.summary.scalar('counts to goal', counter, step=i_episode)
 
     def rewards_logger(self, reward, ep):
         # constant reward feed
         with self.rewards_writer.as_default():
-            tf.summary.scalar('reward', reward, step=ep)
+            tf.summary.scalar('reward feed', reward, step=ep)
 
     def actions_logger(self, action, noise, ep):
         # constant action feed
@@ -135,7 +136,6 @@ class TBLogger:
             tf.summary.scalar('critic estimation', policy_reward[0][0], step=ep)
         with self.target_critic_writer.as_default():
             tf.summary.scalar('critic estimation', target_reward[0][0], step=ep)
-
 
     # receives array of network weights from model.get_weights()[0], step #
     def weights_logger(self, policy_actor_model, policy_critic_model,
