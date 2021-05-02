@@ -214,6 +214,11 @@ class AC_Agent:
             if i_episode % self.SAVE_FREQ == 0:
                 self.save_weights(self.SAVE_PREFIX + "_weights", i_episode)
 
+            if i_episode % self.WRITE_FREQ == 0:
+                with open(self.SAVE_PREFIX + "_values.csv", "a") as f:
+                    f.write("{},{}\n".format(i_episode, episodic_reward))
+                pass
+
     def test(self):
         # Load saved model weights
         # data_weights/0550_policy_
