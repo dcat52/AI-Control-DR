@@ -1,11 +1,9 @@
+from src.simulator.Environment import Environment
+import src.controllers.AC2 as AC2
 import argparse
 import logging
 import sys
 import random
-
-from src.simulator.Environment import Environment
-import src.controllers.AC2 as AC2
-
 import tensorflow
 import numpy
 
@@ -33,7 +31,7 @@ def parse():
     parser.add_argument('--actor_lr',        dest="ACTOR_LR",        default=0.0001, type=float, help='Learning rate for the actor')
     parser.add_argument('--critic_lr',       dest="CRITIC_LR",       default=0.0002, type=float, help='Learning rate for the critic')
     parser.add_argument('--plot',            dest="PLOT",            action='store_true',        help='Whether to plot data')
-    parser.add_argument('--tensorboard',     dest="TENSORBOARD",     default=2, type=int,        help='Whether to use tensorboard')
+    parser.add_argument('--tensorboard',     dest="TENSORBOARD",     default=1, type=int,        help='Whether to use tensorboard')
     parser.add_argument('--date',            dest="DATE_IN_PREFIX",  action='store_true',        help='Use the date in the prefix string (appended as _20210314_180101)')
     parser.add_argument('--load_prefix',     dest="LOAD_PREFIX",     default="data", type=str,   help='Location to load model weights from')
     parser.add_argument('--seed',            dest="SEED",            default=-1, type=int,       help='Set the default seed value, -1 is random seed.')

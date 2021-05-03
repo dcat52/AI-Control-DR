@@ -119,6 +119,7 @@ class AC_Agent:
     def train(self):
 
         cumulative_episode_reward = []
+        episode_lengths = []
         ep = 0
 
         for i_episode in range(1, self.NUM_EPISODES+1):
@@ -145,16 +146,9 @@ class AC_Agent:
                 # We make sure action is within bounds
                 legal_action = np.clip(action, self.lower_bound, self.upper_bound)
 
-                # clip very small wheel velocities to avoid bad gradients?
-                # if np.abs(legal_action[0]) < 0.1:
-                #     legal_action[0] = 0
-                # if np.abs(legal_action[1]) < 0.1:
-                #     legal_action[1] = 0
-
                 next_state, reward, done, info = self.env.step(legal_action)
                 done = int(done)
                 episodic_reward += reward
-
 
                 # TensorBoard log level 1 and 2: rewards, actions, and noise
                 if self.TENSORBOARD >= 1:
@@ -164,6 +158,7 @@ class AC_Agent:
                     if self.TENSORBOARD >= 2:
                         log_state = np.array(state)
                         log_action = np.array(legal_action)
+
                     if self.TENSORBOARD >= 3:
                         policy_critic_estimate = self.policy_critic_net.predict([log_state, log_action])
                         target_critic_estimate = self.target_critic_net.predict([log_state, log_action])
@@ -194,27 +189,35 @@ class AC_Agent:
                 if counter % self.TARGET_UPDATE == 0:
                     self.update_targets()
 
-            if self.TENSORBOARD >=2:
-                log_ep_reward = np.array(episodic_reward)
-
-                self.tb_logger.write_ep_logs(episodic_reward, i_episode)
+            # Log average episode length in Tensorboard ('steps until goal reached')
+            if self.TENSORBOARD >= 1:
+                self.tb_logger.write_ep_reward_logs(episodic_reward, i_episode)
+                self.tb_logger.write_ep_steps_logs(counter, i_episode)
 
             cumulative_episode_reward.append(episodic_reward)
+            episode_lengths.append(counter)
 
             if i_episode % self.PRINT_FREQ == 0:
-                # Mean of last 40 episodes
-                avg_reward = np.mean(cumulative_episode_reward[-10:])
-                print("Episode: {:3d} -- Current Avg Reward: {:9.5f} -- Episode Moving Avg Reward is: {:9.2f}".format(
-                    i_episode, episodic_reward/counter, avg_reward
-                    ))
+                # Mean reward of last 40 episodes if agent failed to reach goal by end of episode
+                if counter == self.count_max:
+                    avg_reward = np.mean(cumulative_episode_reward[-10:])
+                    print("Episode: {:3d} -- Failed: Current Avg Reward: {:9.5f} -- Episode Moving Avg Reward is: {:9.2f}".format(
+                        i_episode, episodic_reward/counter, avg_reward
+                        ))
+                else:
+                    # Mean steps to goal of last 40 episodes
+                    avg_length = np.mean(episode_lengths[-10:])
+                    print("Episode: {:3d} -- Success! Current Steps to Reach Goal: {:9.5f} -- Moving Avg Steps Required is: {:9.2f}".format(
+                        i_episode, counter, avg_length
+                        ))
+
+            if i_episode % self.SAVE_FREQ == 0:
+                self.save_weights(self.SAVE_PREFIX + "_weights", i_episode)
 
             if i_episode % self.WRITE_FREQ == 0:
                 with open(self.SAVE_PREFIX + "_values.csv", "a") as f:
                     f.write("{},{}\n".format(i_episode, episodic_reward))
                 pass
-
-            if i_episode % self.SAVE_FREQ == 0:
-                self.save_weights(self.SAVE_PREFIX + "_weights", i_episode)
 
     def test(self):
         # Load saved model weights

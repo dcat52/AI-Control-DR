@@ -8,6 +8,7 @@ class Reward:
 
     def __init__(self, goal: Vec2d = (0, 0), carrot_reward: bool = False, agent: Agent = None):
         self.reward_goal = 10.0
+        self.reward_death = -10.0
         self.goal = goal
         self.carrot_reward = carrot_reward
         self.agent = agent

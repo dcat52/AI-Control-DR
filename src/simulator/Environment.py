@@ -101,6 +101,8 @@ class Environment:
                 self.set_new_random_goal()
             done = True
 
+        # Collision event logging for wall contact
+        # TODO:
         # (state, reward, done, None)
         return state_prime, reward, done, None
 
