@@ -1,5 +1,5 @@
 from queue import Queue
-from math import cos, sin
+from math import cos, sin, atan, degrees, pi
 
 import numpy as np
 import pymunk
@@ -84,17 +84,56 @@ class Agent:
         return self.body.angle
 
     def _sense(self) -> np.ndarray:
+        
+        use_delta_x_y = False
+
+        if use_delta_x_y:
+            # get agent's angle
+            a = self.get_angle()
+            # calculate roation matrix
+            r = np.array([[cos(a), sin(a)], [-sin(a), cos(a)]])
+            # get delta to goal as np array
+            v = np.array(self._env.goal - self.get_pos())
+            # multiply r * v (frame transformation)
+            sensors = r.dot(v)
+            # scale to less
+            sensors = sensors / 500
+
+            return sensors
+        
+        dist = abs(self.get_pos().get_distance(self._env.goal))
+
+
         # get agent's angle
         a = self.get_angle()
+        a = degrees(a)
+        # print(a)
         # calculate roation matrix
-        r = np.array([[cos(a), sin(a)], [-sin(a), cos(a)]])
-        # get delta to goal as np array
-        v = np.array(self._env.goal - self.get_pos())
-        # multiply r * v (frame transformation)
-        sensors = r.dot(v)
-        # scale to less
-        sensors = sensors / 500
-        
+        # r = np.array([[cos(a), sin(a)], [-sin(a), cos(a)]])
+        # # get delta to goal as np array
+        xy = self._env.goal - self.get_pos()
+        # # multiply r * v (frame transformation)
+        # xy = r.dot(v)
+        # print(xy)
+        a2 = atan(xy[1]/xy[0])
+        a2 = degrees(a2)
+
+        angle = a2 - a
+
+        angle = angle % 360
+        if angle >= 180:
+            angle = angle - 360
+        # angle = degrees(angle)
+
+        dist = dist / 200
+        dist = min(dist, 1.0)
+
+        # if angle > 180:
+        #     angle = 360-angle
+        angle = angle / 180.0
+
+        sensors = np.array([dist, angle])
+
         return sensors
 
     def _set_pos(self, new_pos: Vec2d) -> None:

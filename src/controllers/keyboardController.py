@@ -19,6 +19,7 @@ class Keyboard_Controller:
 
     def loop(self):
         while self.running:
+            np.set_printoptions(suppress=True)
 
             self.process_keys()
 
@@ -28,7 +29,7 @@ class Keyboard_Controller:
                 if s[i] > self.max_s[i]:
                     self.max_s[i] = s[i]
 
-            print(s)
+            print(s[1])
 
 
             

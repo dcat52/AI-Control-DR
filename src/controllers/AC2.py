@@ -98,7 +98,7 @@ class AC_Agent:
 
         self.steps_done = 0
         self.episode_durations = 1000
-        self.count_max = 100
+        self.count_max = 1000
         self.ep_epsilon = self.episode_durations
         self.count_epsilon = self.count_max
 
@@ -190,9 +190,9 @@ class AC_Agent:
                 # Perform one step of the optimization (on the target network)
                 self.learn()
 
-            # Update the target network
-            if counter % self.TARGET_UPDATE == 0:
-                self.update_targets()
+                # Update the target network
+                if counter % self.TARGET_UPDATE == 0:
+                    self.update_targets()
 
             if self.TENSORBOARD >=2:
                 log_ep_reward = np.array(episodic_reward)

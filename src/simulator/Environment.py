@@ -52,7 +52,7 @@ class Environment:
         agent_shape = self.agent.get_shape()
         self.space.add(agent_body, agent_shape)
 
-        self.reward_model = Reward(goal=goal, carrot_reward=carrot_reward)
+        self.reward_model = Reward(goal=goal, carrot_reward=carrot_reward, agent=self.agent)
         self.goal = goal
         self.goal_threshold = goal_threshold
 
