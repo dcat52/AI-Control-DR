@@ -97,15 +97,13 @@ class AC_Agent:
         self.buffer = Buffer(capacity=self.BUFFER_CAPACITY)
 
         self.steps_done = 0
-        self.episode_durations = 1000
+        self.num_episodes = 1000
         self.count_max = 100
-        self.ep_epsilon = self.episode_durations
+        self.ep_epsilon = self.num_episodes
         self.count_epsilon = self.count_max
 
     def save_weights(self, directory: str, i: int):
         print("Saving model weights.")
-        # self.policy_actor_net.to_json("{}/{:04d}_policy_actor_net.json".format(directory, i))
-        # self.policy_actor_net.to_json("{}/{:04d}_policy_critic_net.json".format(directory, i))
         self.policy_actor_net.save("{}/{:04d}_policy_actor_net".format(directory, i), save_format="tf")
         # self.policy_critic_net.save("{}/{:04d}_policy_critic_net".format(directory, i),  save_format="tf")
 
@@ -136,7 +134,10 @@ class AC_Agent:
                     action = self.make_action(state)
                 log_action = [action[0], action[1]]
 
-                if self.env.noise_option:
+                # TODO: find better way to turn off noise at end of training
+                if i_episode/self.num_episodes == .75:
+                    print("75% through training, deactivating noise exploration.")
+                if self.env.noise_option or i_episode / self.num_episodes <= .75:
                     # noise = np.random.uniform(-0.5, 0.5, 2)
                     noise = [self.ou_noise_L(), self.ou_noise_R()]
                 else:
@@ -202,14 +203,12 @@ class AC_Agent:
                 if counter == self.count_max:
                     avg_reward = np.mean(cumulative_episode_reward[-10:])
                     print("Episode: {:3d} -- Failed: Current Avg Reward: {:9.5f} -- Episode Moving Avg Reward is: {:9.2f}".format(
-                        i_episode, episodic_reward/counter, avg_reward
-                        ))
+                        i_episode, episodic_reward/counter, avg_reward))
                 else:
                     # Mean steps to goal of last 40 episodes
                     avg_length = np.mean(episode_lengths[-10:])
                     print("Episode: {:3d} -- Success! Current Steps to Reach Goal: {:9.5f} -- Moving Avg Steps Required is: {:9.2f}".format(
-                        i_episode, counter, avg_length
-                        ))
+                        i_episode, counter, avg_length))
 
             if i_episode % self.SAVE_FREQ == 0:
                 self.save_weights(self.SAVE_PREFIX + "_weights", i_episode)
@@ -222,8 +221,8 @@ class AC_Agent:
     def test(self):
         # Load saved model weights
         # data_weights/0550_policy_
-        self.policy_actor_net = tf.keras.models.load_model('{}actor_net'.format(self.LOAD_PREFIX))
-        self.critic_actor_net = tf.keras.models.load_model('{}critic_net'.format(self.LOAD_PREFIX))
+        self.policy_actor_net = tf.keras.models.load_model(self.LOAD_PREFIX)
+        # self.critic_actor_net = tf.keras.models.load_model('{}critic_net'.format(self.LOAD_PREFIX))
 
         final_episode_reward = []
         cumulative_episode_reward = []
