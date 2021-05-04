@@ -18,7 +18,7 @@ def parse():
     # model settings
     parser.add_argument('--print_freq',      dest="PRINT_FREQ",      default=1, type=int,        help='How often to print information to std out')
     parser.add_argument('--write_freq',      dest="WRITE_FREQ",      default=5, type=int,        help='How often to save information to disk')
-    parser.add_argument('--save_freq',       dest="SAVE_FREQ",       default=100, type=int,     help='Save model weights every n iterations')
+    parser.add_argument('--save_freq',       dest="SAVE_FREQ",       default=500, type=int,     help='Save model weights every n iterations')
     parser.add_argument('--batch_size',      dest="BATCH_SIZE",      default=2000, type=int,       help='Batch size')
     parser.add_argument('--buffer_capacity', dest="BUFFER_CAPACITY", default=40000, type=int,    help='Buffer capacity')
     parser.add_argument('--episodes', '--ep',dest="NUM_EPISODES",    default=1000, type=int,     help='Number of episodes to run')

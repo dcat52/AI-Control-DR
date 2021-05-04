@@ -105,7 +105,7 @@ class AC_Agent:
     def save_weights(self, directory: str, i: int):
         print("Saving model weights.")
         self.policy_actor_net.save("{}/{:04d}_policy_actor_net".format(directory, i), save_format="tf")
-        # self.policy_critic_net.save("{}/{:04d}_policy_critic_net".format(directory, i),  save_format="tf")
+        self.policy_critic_net.save("{}/{:04d}_policy_critic_net".format(directory, i),  save_format="tf")
 
     def make_action(self, state):
         state = np.expand_dims(state, axis=0)
@@ -129,24 +129,27 @@ class AC_Agent:
 
             while not done:
                 # Epsilon flag: intermittent 'noise-only' episodes
-                if not i_episode % self.ep_epsilon == 0 or not counter % self.count_epsilon == 0 or not self.env.noise_option:
+                if not i_episode % self.ep_epsilon == 0 \
+                        or not counter % self.count_epsilon == 0 \
+                        or not self.env.noise_option:
                     # Select and perform an action
                     action = self.make_action(state)
                 log_action = [action[0], action[1]]
 
                 # TODO: find better way to turn off noise at end of training
-                if i_episode/self.num_episodes == .75:
+                if i_episode/self.num_episodes == .5:
                     print("75% through training, deactivating noise exploration.")
-                if self.env.noise_option or i_episode / self.num_episodes <= .75:
+
+                if self.env.noise_option or i_episode / self.num_episodes <= .5:
                     # noise = np.random.uniform(-0.5, 0.5, 2)
                     noise = [self.ou_noise_L(), self.ou_noise_R()]
                 else:
                     noise = [0, 0]
+
                 action[0] = action[0] + noise[0]
                 action[1] = action[1] + noise[1]
                 # We make sure action is within bounds
                 legal_action = np.clip(action, self.lower_bound, self.upper_bound)
-
                 next_state, reward, done, info = self.env.step(legal_action)
                 done = int(done)
                 episodic_reward += reward
@@ -224,8 +227,10 @@ class AC_Agent:
         self.policy_actor_net = tf.keras.models.load_model(self.LOAD_PREFIX)
         # self.critic_actor_net = tf.keras.models.load_model('{}critic_net'.format(self.LOAD_PREFIX))
 
-        final_episode_reward = []
+        self.policy_actor_net.compile()
         cumulative_episode_reward = []
+        episode_lengths = []
+        ep = 0
 
         for i_episode in range(1, self.NUM_EPISODES+1):
 
@@ -235,36 +240,70 @@ class AC_Agent:
             done = False
 
             while not done:
-                # Select and perform an action
                 action = self.make_action(state)
+                log_action = [action[0], action[1]]
 
-                next_state, reward, done, info = self.env.step(action)
+                noise = [0, 0]
+
+                action[0] = action[0] + noise[0]
+                action[1] = action[1] + noise[1]
+                # We make sure action is within bounds
+                legal_action = np.clip(action, self.lower_bound, self.upper_bound)
+                next_state, reward, done, info = self.env.step(legal_action)
                 done = int(done)
-
-                # TODO: log model outputs
-
                 episodic_reward += reward
+
+                # TensorBoard log level 1 and 2: rewards, actions, and noise
+                if self.TENSORBOARD >= 1:
+                    ep += 1
+                    critics = None
+
+                    if self.TENSORBOARD >= 2:
+                        log_state = np.array(state)
+                        log_action = np.array(legal_action)
+
+                    if self.TENSORBOARD >= 3:
+                        policy_critic_estimate = self.policy_critic_net.predict([log_state, log_action])
+                        target_critic_estimate = self.target_critic_net.predict([log_state, log_action])
+                        critics = [policy_critic_estimate, target_critic_estimate]
+
+                    if self.TENSORBOARD >= 4:
+                        self.tb_logger.weights_logger(self.policy_actor_net, self.policy_critic_net,
+                                                      self.target_actor_net, self.target_critic_net, ep)
+
+                    self.tb_logger.write_logs(self, reward, log_action, noise, critics, ep)
 
                 counter += 1
                 if counter == self.count_max:
                     done = True
 
+                rewardTensor = tf.convert_to_tensor([reward])
+
+                # Store the transition in memory
+                self.buffer.push(state, legal_action, next_state, rewardTensor)
+
                 # Move to the next state
                 state = next_state
 
-            final_episode_reward.append(reward)
-            cumulative_episode_reward.append(episodic_reward / counter)
+            # Log average episode length in Tensorboard ('steps until goal reached')
+            if self.TENSORBOARD >= 1:
+                self.tb_logger.write_ep_reward_logs(episodic_reward, i_episode)
+                self.tb_logger.write_ep_steps_logs(counter, i_episode)
 
-            # TensorBoard logging for episodic reward
-            if self.TENSORBOARD:
-                self.tb_logger.rewards_logger(episodic_reward, i_episode)
+            cumulative_episode_reward.append(episodic_reward)
+            episode_lengths.append(counter)
 
             if i_episode % self.PRINT_FREQ == 0:
-                # Mean of last 40 episodes
-                avg_reward = np.mean(cumulative_episode_reward[-10:])
-                print("Episode: {:3d} -- Current Reward: {:9.2f} -- Avg Reward is: {:9.2f}".format(
-                    i_episode, episodic_reward, avg_reward
-                    ))
+                # Mean reward of last 40 episodes if agent failed to reach goal by end of episode
+                if counter == self.count_max:
+                    avg_reward = np.mean(cumulative_episode_reward[-10:])
+                    print("Episode: {:3d} -- Failed: Current Avg Reward: {:9.5f} -- Episode Moving Avg Reward is: {:9.2f}".format(
+                        i_episode, episodic_reward/counter, avg_reward))
+                else:
+                    # Mean steps to goal of last 40 episodes
+                    avg_length = np.mean(episode_lengths[-10:])
+                    print("Episode: {:3d} -- Success! Current Steps to Reach Goal: {:9.5f} -- Moving Avg Steps Required is: {:9.2f}".format(
+                        i_episode, counter, avg_length))
 
             if i_episode % self.WRITE_FREQ == 0:
                 with open(self.SAVE_PREFIX + "_values.csv", "a") as f:
