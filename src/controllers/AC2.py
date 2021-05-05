@@ -125,15 +125,16 @@ class AC_Agent:
         for i_episode in range(1, self.NUM_EPISODES+1):
 
             state = self.env.reset()
+            next_state = state
             episodic_reward = 0
             counter = 0
             done = False
 
             while not done:
                 # Epsilon flag: intermittent 'noise-only' episodes
-                if not i_episode % self.ep_epsilon == 0 or not counter % self.count_epsilon == 0 or not self.env.noise_option:
-                    # Select and perform an action
-                    action = self.make_action(state)
+                # if not i_episode % self.ep_epsilon == 0 or not counter % self.count_epsilon == 0 or not self.env.noise_option:
+                # Select and perform an action
+                action = self.make_action(state)
                 log_action = [action[0], action[1]]
 
                 if self.env.noise_option:

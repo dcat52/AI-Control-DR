@@ -14,9 +14,9 @@ class Actor_Model(tf.keras.Model):
 
         self.hl = []
 
-        self.inp = layers.Dense(state_length, activation=nn.relu)
+        self.inp = layers.Dense(state_length, activation=nn.silu)
         for i in range(num_layers):
-            layer = layers.Dense(layer_width, activation=nn.relu)
+            layer = layers.Dense(layer_width, activation=nn.silu)
             self.hl.append(layer)
         # self.hl2 = layers.Dense(256, activation=nn.relu)
         self.out = layers.Dense(action_length, activation=nn.tanh, kernel_initializer=self.last_init)
