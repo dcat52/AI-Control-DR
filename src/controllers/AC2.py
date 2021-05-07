@@ -253,8 +253,6 @@ class AC_Agent:
                 done = int(done)
                 episodic_reward += reward
 
-                print(action)
-
                 # TensorBoard log level 1 and 2: rewards, actions, and noise
                 if self.TENSORBOARD >= 1:
                     ep += 1

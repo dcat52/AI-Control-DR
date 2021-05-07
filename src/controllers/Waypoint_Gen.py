@@ -134,15 +134,14 @@ class WP_Agent:
                 if not i_episode % self.ep_epsilon == 0 \
                         or not counter % self.count_epsilon == 0 \
                         or not self.env.noise_option:
-                    # Select and perform an action
+                    # Generate waypoint
                     waypoint = self.make_waypoint(state)
                 log_waypoint = [waypoint[0], waypoint[1]]
 
-                # TODO: find better way to turn off noise at end of training
-                if i_episode/self.num_episodes == .5:
+                if i_episode/self.num_episodes == .75:
                     print("75% through training, deactivating noise exploration.")
 
-                if self.env.noise_option or i_episode / self.num_episodes <= .5:
+                if self.env.noise_option or i_episode / self.num_episodes <= .75:
                     # noise = np.random.uniform(-0.5, 0.5, 2)
                     noise = [self.ou_noise_L(), self.ou_noise_R()]
                 else:
@@ -151,11 +150,18 @@ class WP_Agent:
                 waypoint[0] = waypoint[0] + noise[0]
                 waypoint[1] = waypoint[1] + noise[1]
 
-                # Query AC_Agent for motor action
-                action = self.ac_agent
+                # Set waypoint as agents goal in env
+                self.env.set_new_goal(waypoint)
+                # TODO: env.get_agent_state()
+                state = self.env.get_agent_state()
+                # Query AC_Agent model for motor action
+                action = self.ac_agent(state)
 
                 # We make sure action is within bounds
-                legal_action = np.clip(waypoint, self.lower_bound, self.upper_bound)
+                legal_action = np.clip(action, self.lower_bound, self.upper_bound)
+
+                # TODO: make step() return planner state space or create alternate step func
+                # TODO: make planner reward function
                 next_state, reward, done, info = self.env.step(legal_action)
                 done = int(done)
                 episodic_reward += reward
@@ -196,8 +202,7 @@ class WP_Agent:
                 self.learn()
 
             # Update the target network
-            if counter % self.TARGET_UPDATE == 0:
-                self.update_targets()
+            self.update_targets()
 
             # Log average episode length in Tensorboard ('steps until goal reached')
             if self.TENSORBOARD >= 1:
@@ -207,6 +212,7 @@ class WP_Agent:
             cumulative_episode_reward.append(episodic_reward)
             episode_lengths.append(counter)
 
+            # Printing status to console
             if i_episode % self.PRINT_FREQ == 0:
                 # Mean reward of last 40 episodes if agent failed to reach goal by end of episode
                 if counter == self.count_max:
