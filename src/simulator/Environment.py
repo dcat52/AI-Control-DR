@@ -5,6 +5,7 @@ import pymunk.pygame_util
 from pymunk import Vec2d
 
 from src.simulator.Agent import Agent
+from src.simulator.Box import Box
 from src.simulator.Reward import Reward
 
 
@@ -31,6 +32,9 @@ class Environment:
         self.robot_start = robot_start
         self.agent = Agent(self, start_pos=robot_start)
 
+        self.box = Box(self)
+        # self.space.add(self.box)
+
         self.render_env = render
         self.called_render = False
 
@@ -51,6 +55,9 @@ class Environment:
         agent_body = self.agent.get_body()
         agent_shape = self.agent.get_shape()
         self.space.add(agent_body, agent_shape)
+        box_body = self.box.get_body()
+        box_shape = self.box.box
+        self.space.add(box_body, box_shape)
 
         self.reward_model = Reward(goal=goal, carrot_reward=carrot_reward)
         self.goal = goal
@@ -133,6 +140,9 @@ class Environment:
         self.agent.body.velocity *= self.friction_scalar
         self.agent.body.angular_velocity *= self.friction_angular_scalar
 
+        self.box.body.velocity *= self.friction_scalar
+        self.box.body.angular_velocity *= self.friction_angular_scalar
+
     def _add_static_scenery(self) -> True:
         # walls
         static_lines = [
@@ -195,4 +205,6 @@ class Environment:
         """
         pygame.draw.circle(self.screen, (0, 150, 0), self.goal, 10)
         self.space.debug_draw(self.draw_options)
+
+    # def _create_box(self):
 
