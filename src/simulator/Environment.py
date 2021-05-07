@@ -98,7 +98,7 @@ class Environment:
             pygame.display.set_caption(str(self.step_count))
             self._render()
 
-        state_prime = self._get_agent_state(box_mode)
+        state_prime = self._get_agent_state(self.box_mode)
         agent_pos = self.agent.get_pos()
         reward = self.reward_model.calculate_reward(agent_pos)
 
@@ -142,8 +142,8 @@ class Environment:
         raise NotImplementedError("Currently does nothing.")
         return
 
-    def _get_agent_state(self) -> np.ndarray:
-        state = self.agent.get_state()
+    def _get_agent_state(self, box_mode=False) -> np.ndarray:
+        state = self.agent.get_state(box_mode)
         return state
 
     def _assess_friction(self) -> None:
