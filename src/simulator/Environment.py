@@ -13,7 +13,7 @@ class Environment:
     
     def __init__(self, robot_start: Vec2d = (0, 0), goal: Vec2d = (2, 2), goal_threshold: float = 10.0,
                  noise_option: bool = True, randomize_goal_option: bool = True, carrot_reward: bool = False,
-                 render: bool = True, render_step: int = 5, init: bool = True) -> None:
+                 render: bool = True, render_step: int = 5, init: bool = True, use_box_to_dest: bool = True) -> None:
         # Physics
         # Time step
         self.dt = 1.0 / 60.0
@@ -42,6 +42,8 @@ class Environment:
         self.randomize_goal_option = randomize_goal_option
         self.carrot_reward = carrot_reward
 
+        self.use_box_to_dest = use_box_to_dest
+        
         if init:
             pygame.init()
             if render:
@@ -56,7 +58,7 @@ class Environment:
         agent_shape = self.agent.get_shape()
         self.space.add(agent_body, agent_shape)
         box_body = self.box.get_body()
-        box_shape = self.box.box
+        box_shape = self.box.get_shape()
         self.space.add(box_body, box_shape)
 
         self.reward_model = Reward(goal=goal, carrot_reward=carrot_reward)
@@ -71,7 +73,8 @@ class Environment:
     def reset(self) -> None:
         self.__init__(robot_start=self.robot_start, goal=self.goal, goal_threshold=self.goal_threshold,
                       noise_option=self.noise_option, randomize_goal_option=self.randomize_goal_option,
-                      carrot_reward=self.carrot_reward, render=self.render_env, render_step=self.render_step, init=False)
+                      carrot_reward=self.carrot_reward, render=self.render_env, render_step=self.render_step,
+                      init=False, use_box_to_dest=self.use_box_to_dest)
         return (self._get_agent_state())
 
     def step(self, action) -> None:
@@ -102,6 +105,8 @@ class Environment:
         done = False
 
         dist = self._agent_dist_to_goal()
+        if self.use_box_to_dest:
+            dist = self._box_dist_to_goal()
         if dist <= self.goal_threshold:
             reward += self.reward_model.reward_goal
             if self.randomize_goal_option:
@@ -124,6 +129,11 @@ class Environment:
 
     def _agent_dist_to_goal(self):
         pos = self.agent.get_pos()
+        dist = pos.get_distance(self.goal)
+        return dist
+
+    def _box_dist_to_goal(self):
+        pos = self.box.get_pos()
         dist = pos.get_distance(self.goal)
         return dist
 
