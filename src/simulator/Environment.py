@@ -98,7 +98,7 @@ class Environment:
             pygame.display.set_caption(str(self.step_count))
             self._render()
 
-        state_prime = self._get_agent_state(box_mode)
+        state_prime = self._get_agent_state(self.box_mode)
         agent_pos = self.agent.get_pos()
         reward = self.reward_model.calculate_reward(agent_pos)
 

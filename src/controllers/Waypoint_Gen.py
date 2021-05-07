@@ -18,7 +18,7 @@ from src.util import OUActionNoise, Buffer, Transition
 np.set_printoptions(precision=2, linewidth=180)
 tf.compat.v1.logging.set_verbosity(tf.compat.v1.logging.ERROR)
 
-class AC_Agent:
+class WP_Agent:
     def __init__(self, env, args):
 
         self.args = args
@@ -84,6 +84,7 @@ class AC_Agent:
         self.ou_noise_R = OUActionNoise(mean=np.zeros(1), std_deviation=float(self.STD_DEV) * np.ones(1),
                                         theta=float(self.THETA) * np.ones(1))
 
+        self.ac_agent = self.load_ac_agent(self.LOAD_PREFIX)
         self.policy_actor_net = Actor_Model(num_layers=self.ACTOR_NUM_LAYERS, layer_width=self.ACTOR_LAYER_WIDTH)
         self.policy_critic_net = Critic_Model(max_layer_width=self.CRITIC_LAYER_WIDTH)
         self.target_actor_net = Actor_Model(num_layers=self.ACTOR_NUM_LAYERS, layer_width=self.ACTOR_LAYER_WIDTH)
@@ -107,7 +108,7 @@ class AC_Agent:
         self.policy_actor_net.save("{}/{:04d}_policy_actor_net".format(directory, i), save_format="tf")
         self.policy_critic_net.save("{}/{:04d}_policy_critic_net".format(directory, i),  save_format="tf")
 
-    def make_action(self, state):
+    def make_waypoint(self, state):
         state = np.expand_dims(state, axis=0)
         sampled_actions = self.policy_actor_net(state)
         sampled_actions = sampled_actions.numpy()
@@ -126,6 +127,7 @@ class AC_Agent:
             episodic_reward = 0
             counter = 0
             done = False
+            waypoint = [0, 0]
 
             while not done:
                 # Epsilon flag: intermittent 'noise-only' episodes
@@ -133,8 +135,8 @@ class AC_Agent:
                         or not counter % self.count_epsilon == 0 \
                         or not self.env.noise_option:
                     # Select and perform an action
-                    action = self.make_action(state)
-                log_action = [action[0], action[1]]
+                    waypoint = self.make_waypoint(state)
+                log_waypoint = [waypoint[0], waypoint[1]]
 
                 # TODO: find better way to turn off noise at end of training
                 if i_episode/self.num_episodes == .5:
@@ -146,10 +148,14 @@ class AC_Agent:
                 else:
                     noise = [0, 0]
 
-                action[0] = action[0] + noise[0]
-                action[1] = action[1] + noise[1]
+                waypoint[0] = waypoint[0] + noise[0]
+                waypoint[1] = waypoint[1] + noise[1]
+
+                # Query AC_Agent for motor action
+                action = self.ac_agent
+
                 # We make sure action is within bounds
-                legal_action = np.clip(action, self.lower_bound, self.upper_bound)
+                legal_action = np.clip(waypoint, self.lower_bound, self.upper_bound)
                 next_state, reward, done, info = self.env.step(legal_action)
                 done = int(done)
                 episodic_reward += reward
@@ -161,18 +167,18 @@ class AC_Agent:
 
                     if self.TENSORBOARD >= 2:
                         log_state = np.array(state)
-                        log_action = np.array(legal_action)
+                        log_waypoint = np.array(legal_action)
 
                     if self.TENSORBOARD >= 3:
-                        policy_critic_estimate = self.policy_critic_net.predict([log_state, log_action])
-                        target_critic_estimate = self.target_critic_net.predict([log_state, log_action])
+                        policy_critic_estimate = self.policy_critic_net.predict([log_state, log_waypoint])
+                        target_critic_estimate = self.target_critic_net.predict([log_state, log_waypoint])
                         critics = [policy_critic_estimate, target_critic_estimate]
 
                     if self.TENSORBOARD >= 4:
                         self.tb_logger.weights_logger(self.policy_actor_net, self.policy_critic_net,
                                                       self.target_actor_net, self.target_critic_net, ep)
 
-                    self.tb_logger.write_logs(self, reward, log_action, noise, critics, ep)
+                    self.tb_logger.write_logs(self, reward, log_waypoint, noise, critics, ep)
 
                 counter += 1
                 if counter == self.count_max:
@@ -240,7 +246,7 @@ class AC_Agent:
             done = False
 
             while not done:
-                action = self.make_action(state)
+                action = self.make_waypoint(state)
                 log_action = [action[0], action[1]]
 
                 noise = [0, 0]
@@ -252,8 +258,6 @@ class AC_Agent:
                 next_state, reward, done, info = self.env.step(legal_action)
                 done = int(done)
                 episodic_reward += reward
-
-                print(action)
 
                 # TensorBoard log level 1 and 2: rewards, actions, and noise
                 if self.TENSORBOARD >= 1:
@@ -357,3 +361,7 @@ class AC_Agent:
 
         update(self.target_actor_net.variables, self.policy_actor_net.variables, tau)
         update(self.target_critic_net.variables, self.policy_critic_net.variables, tau)
+
+    def load_ac_agent(self):
+        model = tf.keras.model.load(self.LOAD_PREFIX)
+        return model
