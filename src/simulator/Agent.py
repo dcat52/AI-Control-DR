@@ -43,7 +43,7 @@ class Agent:
     def get_shape(self) -> object:
         return self.shape
 
-    def get_state(self) -> np.ndarray:
+    def get_state(self, box_mode) -> np.ndarray:
         self.pos_history.get(block=False)
         self.pos_history.put(self.get_pos(), block=False)
         self.ang_history.get(block=False)

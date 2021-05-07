@@ -9,7 +9,7 @@ from pymunk import Vec2d
 import random
 
 class Box:
-    def __init__(self, _env, mass: float = 10, moment: float = 100, shape: tuple = (40.0, 40.0),
+    def __init__(self, _env, mass: float = 10, moment: float = 200, shape: tuple = (40.0, 40.0),
                  start_pos: Vec2d = (350, 350)) -> None:
         self._env = _env
 

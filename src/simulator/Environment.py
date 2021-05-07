@@ -13,7 +13,7 @@ class Environment:
     
     def __init__(self, robot_start: Vec2d = (0, 0), goal: Vec2d = (2, 2), goal_threshold: float = 10.0,
                  noise_option: bool = True, randomize_goal_option: bool = True, carrot_reward: bool = False,
-                 render: bool = True, render_step: int = 5, init: bool = True, use_box_to_dest: bool = True) -> None:
+                 render: bool = True, render_step: int = 5, init: bool = True, box_mode: bool = True) -> None:
         # Physics
         # Time step
         self.dt = 1.0 / 60.0
@@ -42,7 +42,7 @@ class Environment:
         self.randomize_goal_option = randomize_goal_option
         self.carrot_reward = carrot_reward
 
-        self.use_box_to_dest = use_box_to_dest
+        self.box_mode = box_mode
         
         if init:
             pygame.init()
@@ -74,7 +74,7 @@ class Environment:
         self.__init__(robot_start=self.robot_start, goal=self.goal, goal_threshold=self.goal_threshold,
                       noise_option=self.noise_option, randomize_goal_option=self.randomize_goal_option,
                       carrot_reward=self.carrot_reward, render=self.render_env, render_step=self.render_step,
-                      init=False, use_box_to_dest=self.use_box_to_dest)
+                      init=False, box_mode=self.box_mode)
         return (self._get_agent_state())
 
     def step(self, action) -> None:
@@ -98,14 +98,14 @@ class Environment:
             pygame.display.set_caption(str(self.step_count))
             self._render()
 
-        state_prime = self._get_agent_state()
+        state_prime = self._get_agent_state(box_mode)
         agent_pos = self.agent.get_pos()
         reward = self.reward_model.calculate_reward(agent_pos)
 
         done = False
 
         dist = self._agent_dist_to_goal()
-        if self.use_box_to_dest:
+        if self.box_mode:
             dist = self._box_dist_to_goal()
         if dist <= self.goal_threshold:
             reward += self.reward_model.reward_goal
