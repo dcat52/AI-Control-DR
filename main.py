@@ -14,6 +14,7 @@ def parse():
     parser.add_argument('-T', '--test_dqn',       action='store_true',    help='Whether test mode')
     parser.add_argument('-r', '--render',         action='store_true',    help='Whether to render')
     parser.add_argument('--carrot',               action='store_true',    help='Whether to use carrot reward')
+    parser.add_argument('--box',               action='store_true',    help='Whether to use box mode')
 
     # model settings
     parser.add_argument('--print_freq',      dest="PRINT_FREQ",      default=1, type=int,        help='How often to print information to std out')
@@ -81,13 +82,13 @@ def run(args: argparse.Namespace):
 
     if args.train_dqn:
         env = Environment(robot_start=args.start_loc, goal=args.goal_loc, goal_threshold=args.goal_thresh,
-                          render=args.render, carrot_reward=args.carrot)
+                          render=args.render, carrot_reward=args.carrot, box_mode=args.box)
         agent = AC2.AC_Agent(env, args)
         agent.train()
 
     if args.test_dqn:
         env = Environment(robot_start=args.start_loc, goal=args.goal_loc, goal_threshold=args.goal_thresh,
-                          render=args.render)
+                          render=args.render, box_mode=args.box)
         actor = args.LOAD_PREFIX
         critic = args.LOAD_PREFIX
         agent = AC2.AC_Agent(env, args)
