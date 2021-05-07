@@ -142,8 +142,8 @@ class Environment:
         raise NotImplementedError("Currently does nothing.")
         return
 
-    def _get_agent_state(self) -> np.ndarray:
-        state = self.agent.get_state()
+    def _get_agent_state(self, box_mode=False) -> np.ndarray:
+        state = self.agent.get_state(box_mode)
         return state
 
     def _assess_friction(self) -> None:
