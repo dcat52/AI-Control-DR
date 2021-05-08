@@ -43,28 +43,89 @@ class Agent:
     def get_shape(self) -> object:
         return self.shape
 
-    def get_state(self, box_mode=False) -> np.ndarray:
+    def _get_rotation_matrix(self) -> np.ndarray:
+
+        # Setup Rotation matrix to transform from world to agent frame
+        agent_angle = self.get_angle()
+        R_world_to_agent = np.array([[cos(a), sin(a)], [-sin(a), cos(a)]])
+
+        # 2x2 rotation matrix
+        return R_world_to_agent
+
+    def _get_agent_x_y_theta_velocities(self, R_world_to_agent: np.ndarray) -> np.ndarray:
+        # calculate agent x,y velocities in agent frame
+        pos_hist = list(self.pos_history.queue)
+        agent_position_velocities = pos_hist[-1] - pos_hist[0]
+        agent_position_velocities = np.array(agent_position_velocities)
+        agent_position_velocities = R_world_to_agent.dot(agent_position_velocities)
+        agent_position_velocities /= 20
+
+        # calculate agent theta velocity
+        agent_angle_history = list(self.ang_history.queue)
+        agent_omega = agent_angle_history[-1] - agent_angle_history[0]
+
+        agent_velocities = np.append(agent_position_velocities, agent_omega)
+
+        # dx, dy, dtheta
+        return agent_velocities
+
+    def _get_agent_dist_to_point(self, R_world_to_agent: np.ndarray, xy_point: Vec2d) -> np.ndarray:
+
+        # calculate x,y distance to a point in agent frame
+        dist_to_point = np.array(xy_point - self.get_pos())
+        dist_to_point = R_world_to_agent.dot(dist_to_point)
+        dist_to_point = dist_to_point / 500
+        
+        # x, y distance
+        return dist_to_point
+
+    def get_waypoint_state(self, xy_point: Vec2d) -> np.ndarray:
+
+        R_world_to_agent = self._get_rotation_matrix()
+        
+        dist_to_point = self._get_agent_dist_to_point(R_world_to_agent, xy_point)
+        result = dist_to_point
+
+        agent_velocities = self._get_agent_x_y_theta_velocities(R_world_to_agent)
+        result = np.append(result, agent_velocities)
+
+        # dx, dy, dtheta, x, y
+        return result
+
+    def get_box_state(self) -> np.ndarray:
+
+        R_world_to_agent = self._get_rotation_matrix()
+        
+        dist_to_dest = self._get_agent_dist_to_point(R_world_to_agent, self._env.goal)
+        result = dist_to_dest
+        
+        dist_to_box = self._get_agent_dist_to_point(R_world_to_agent, self._env.box.get_pos())
+        result = np.append(result, dist_to_box)
+
+        agent_velocities = self._get_agent_x_y_theta_velocities(R_world_to_agent)
+        result = np.append(result, agent_velocities)
+
+        # dx, dy, dtheta, x, y
+        return result
+
+    def get_state(self) -> np.ndarray:
+
+        R_world_to_agent = self._get_rotation_matrix()
+        
+        dist_to_point = self._get_agent_dist_to_point(R_world_to_agent, self._env.goal)
+        result = dist_to_point
+
+        agent_velocities = self._get_agent_x_y_theta_velocities(R_world_to_agent)
+        result = np.append(result, agent_velocities)
+
+        # dx, dy, dtheta, x, y
+        return result
+
+    def update_agent_state(self) -> None:
         self.pos_history.get(block=False)
         self.pos_history.put(self.get_pos(), block=False)
         self.ang_history.get(block=False)
         self.ang_history.put(self.get_angle(), block=False)
-
-        pos_hist = list(self.pos_history.queue)
-        delta1 = pos_hist[-1] - pos_hist[0]
-
-        a = self.get_angle()
-        r = np.array([[cos(a), sin(a)], [-sin(a), cos(a)]])
-        delta1 = np.array(delta1)
-        delta1 = r.dot(delta1) 
-        ang_hist = list(self.ang_history.queue)
-        delta2 = ang_hist[-1] - ang_hist[0]
-
-        observation = self._sense()
-        # state = np.append(observation, list(self.pos_history.queue))
-        state = np.append(observation, delta1/20)
-        state = np.append(state, delta2)
-
-        return state
 
     def set_motors(self, velocities: tuple) -> None:
         self.body.apply_force_at_local_point((20000 * velocities[0], 0), (0, -10))

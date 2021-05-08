@@ -75,7 +75,7 @@ class Environment:
                       noise_option=self.noise_option, randomize_goal_option=self.randomize_goal_option,
                       carrot_reward=self.carrot_reward, render=self.render_env, render_step=self.render_step,
                       init=False, box_mode=self.box_mode)
-        return (self._get_agent_state())
+        return (self.get_agent_state())
 
     def step(self, action) -> None:
         if self.render_env:
@@ -98,7 +98,8 @@ class Environment:
             pygame.display.set_caption(str(self.step_count))
             self._render()
 
-        state_prime = self._get_agent_state(self.box_mode)
+        self._update_agent_state()
+        state_prime = self.get_agent_state()
         agent_pos = self.agent.get_pos()
         reward = self.reward_model.calculate_reward(agent_pos)
 
@@ -142,8 +143,19 @@ class Environment:
         raise NotImplementedError("Currently does nothing.")
         return
 
-    def _get_agent_state(self, box_mode=False) -> np.ndarray:
-        state = self.agent.get_state(box_mode)
+    def _update_agent_state(self) -> None:
+        self.agent.update_agent_state()
+
+    def get_waypoint_state(self, waypoint) -> np.ndarray:
+        state = self.agent.get_waypoint_state(waypoint)
+        return state
+
+    def get_agent_state(self) -> np.ndarray:
+        if self.box_mode:
+            state = self.agent.get_box_state()
+        else:
+            state = self.agent.get_state()
+
         return state
 
     def _assess_friction(self) -> None:
