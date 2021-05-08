@@ -89,7 +89,7 @@ class Agent:
         agent_velocities = self._get_agent_x_y_theta_velocities(R_world_to_agent)
         result = np.append(result, agent_velocities)
 
-        # dx, dy, dtheta, x, y
+        # x, y, x, y, dx, dy, dtheta
         return result
 
     def get_box_state(self) -> np.ndarray:
@@ -105,20 +105,20 @@ class Agent:
         agent_velocities = self._get_agent_x_y_theta_velocities(R_world_to_agent)
         result = np.append(result, agent_velocities)
 
-        # dx, dy, dtheta, x, y
+        # x, y, dx, dy, dtheta
         return result
 
     def get_state(self) -> np.ndarray:
 
         R_world_to_agent = self._get_rotation_matrix()
         
-        dist_to_point = self._get_agent_dist_to_point(R_world_to_agent, self._env.goal)
-        result = dist_to_point
+        dist_to_goal = self._get_agent_dist_to_point(R_world_to_agent, self._env.goal)
+        result = dist_to_goal
 
         agent_velocities = self._get_agent_x_y_theta_velocities(R_world_to_agent)
         result = np.append(result, agent_velocities)
 
-        # dx, dy, dtheta, x, y
+        # x, y, dx, dy, dtheta
         return result
 
     def update_agent_state(self) -> None:
