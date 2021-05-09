@@ -150,8 +150,8 @@ class WP_Agent:
                 waypoint[0] = waypoint[0] + noise[0]
                 waypoint[1] = waypoint[1] + noise[1]
 
-                # Set waypoint as agents goal in env
-                self.env.set_new_goal(waypoint)
+                # # Set waypoint as agents goal in env
+                # self.env.set_new_goal(waypoint)
                 # TODO: env.get_agent_state()
                 state = self.env.get_waypoint_state(waypoint)
                 # Query AC_Agent model for motor action
@@ -162,9 +162,11 @@ class WP_Agent:
                 # We make sure action is within bounds
                 legal_action = np.clip(action, self.lower_bound, self.upper_bound)
 
-                # TODO: make step() return planner state space or create alternate step func
+                # TODO: this seems janky, but I don't see any problems just looking at it
                 # TODO: make planner reward function
-                next_state, reward, done, info = self.env.step(legal_action)
+                agent_state, reward, done, info = self.env.step(legal_action)
+                # Obtain waypoint generator's state
+                next_state = self.env.get_box_state()
                 done = int(done)
                 episodic_reward += reward
 
