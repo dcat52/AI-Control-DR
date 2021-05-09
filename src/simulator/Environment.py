@@ -150,12 +150,12 @@ class Environment:
         state = self.agent.get_waypoint_state(waypoint)
         return state
 
-    def get_agent_state(self) -> np.ndarray:
-        if self.box_mode:
-            state = self.agent.get_box_state()
-        else:
-            state = self.agent.get_state()
+    def get_box_state(self) -> np.ndarray:
+        state = self.agent.get_box_state()
+        return state
 
+    def get_agent_state(self) -> np.ndarray:
+        state = self.agent.get_state()
         return state
 
     def _assess_friction(self) -> None:
