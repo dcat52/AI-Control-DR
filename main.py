@@ -1,5 +1,6 @@
 from src.simulator.Environment import Environment
 import src.controllers.AC2 as AC2
+import src.controllers.Waypoint_Gen as Waypoint_Gen
 import argparse
 import logging
 import sys
@@ -83,7 +84,10 @@ def run(args: argparse.Namespace):
     if args.train_dqn:
         env = Environment(robot_start=args.start_loc, goal=args.goal_loc, goal_threshold=args.goal_thresh,
                           render=args.render, carrot_reward=args.carrot, box_mode=args.box)
-        agent = AC2.AC_Agent(env, args)
+        if not args.box:
+            agent = AC2.AC_Agent(env, args)
+        else:
+            agent = Waypoint_Gen.WP_Agent(env, args)
         agent.train()
 
     if args.test_dqn:

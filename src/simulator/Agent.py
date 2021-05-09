@@ -32,7 +32,7 @@ class Agent:
         self.shape.friction = 0.99
 
         for i in range(pos_hist_len):
-            self.pos_history.put(self.start_pos, block=False)
+            self.pos_history.put(Vec2d(x=self.start_pos[0], y=self.start_pos[1]), block=False)
 
         for i in range(pos_hist_len):
             self.ang_history.put(self.get_angle(), block=False)
@@ -47,6 +47,7 @@ class Agent:
 
         # Setup Rotation matrix to transform from world to agent frame
         agent_angle = self.get_angle()
+        a = agent_angle
         R_world_to_agent = np.array([[cos(a), sin(a)], [-sin(a), cos(a)]])
 
         # 2x2 rotation matrix

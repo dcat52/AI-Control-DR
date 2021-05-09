@@ -84,7 +84,7 @@ class WP_Agent:
         self.ou_noise_R = OUActionNoise(mean=np.zeros(1), std_deviation=float(self.STD_DEV) * np.ones(1),
                                         theta=float(self.THETA) * np.ones(1))
 
-        self.ac_agent = self.load_ac_agent(self.LOAD_PREFIX)
+        self.ac_agent = self.load_ac_agent()
         self.policy_actor_net = Actor_Model(num_layers=self.ACTOR_NUM_LAYERS, layer_width=self.ACTOR_LAYER_WIDTH)
         self.policy_critic_net = Critic_Model(max_layer_width=self.CRITIC_LAYER_WIDTH)
         self.target_actor_net = Actor_Model(num_layers=self.ACTOR_NUM_LAYERS, layer_width=self.ACTOR_LAYER_WIDTH)
@@ -153,9 +153,11 @@ class WP_Agent:
                 # Set waypoint as agents goal in env
                 self.env.set_new_goal(waypoint)
                 # TODO: env.get_agent_state()
-                state = self.env.get_agent_state()
+                state = self.env.get_waypoint_state(waypoint)
                 # Query AC_Agent model for motor action
+                state = np.expand_dims(state, axis=0)
                 action = self.ac_agent(state)
+                action = np.squeeze(action, axis=0)
 
                 # We make sure action is within bounds
                 legal_action = np.clip(action, self.lower_bound, self.upper_bound)
@@ -369,5 +371,5 @@ class WP_Agent:
         update(self.target_critic_net.variables, self.policy_critic_net.variables, tau)
 
     def load_ac_agent(self):
-        model = tf.keras.model.load(self.LOAD_PREFIX)
+        model = tf.keras.models.load_model(self.LOAD_PREFIX)
         return model
