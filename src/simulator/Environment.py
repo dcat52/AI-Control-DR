@@ -32,9 +32,6 @@ class Environment:
         self.robot_start = robot_start
         self.agent = Agent(self, start_pos=robot_start)
 
-        self.box = Box(self)
-        # self.space.add(self.box)
-
         self.render_env = render
         self.called_render = False
 
@@ -43,6 +40,9 @@ class Environment:
         self.carrot_reward = carrot_reward
 
         self.box_mode = box_mode
+
+        if self.box_mode:
+            self.box = Box(self)
         
         if init:
             pygame.init()
@@ -56,10 +56,11 @@ class Environment:
         self._add_static_scenery()
         agent_body = self.agent.get_body()
         agent_shape = self.agent.get_shape()
-        self.space.add(agent_body, agent_shape)
-        box_body = self.box.get_body()
-        box_shape = self.box.get_shape()
-        self.space.add(box_body, box_shape)
+        if self.box_mode:
+            self.space.add(agent_body, agent_shape)
+            box_body = self.box.get_body()
+            box_shape = self.box.get_shape()
+            self.space.add(box_body, box_shape)
 
         self.reward_model = Reward(goal=goal, carrot_reward=carrot_reward)
         self.goal = goal
@@ -100,6 +101,8 @@ class Environment:
 
         self._update_agent_state()
         state_prime = self.get_agent_state()
+        if self.box_mode:
+            state_prime = self.get_box_state()
         agent_pos = self.agent.get_pos()
         reward = self.reward_model.calculate_reward(agent_pos)
 
@@ -162,8 +165,9 @@ class Environment:
         self.agent.body.velocity *= self.friction_scalar
         self.agent.body.angular_velocity *= self.friction_angular_scalar
 
-        self.box.body.velocity *= self.friction_scalar
-        self.box.body.angular_velocity *= self.friction_angular_scalar
+        if self.box_mode:
+            self.box.body.velocity *= self.friction_scalar
+            self.box.body.angular_velocity *= self.friction_angular_scalar
 
     def _add_static_scenery(self) -> True:
         # walls

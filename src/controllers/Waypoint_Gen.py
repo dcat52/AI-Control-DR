@@ -135,8 +135,9 @@ class WP_Agent:
                         or not counter % self.count_epsilon == 0 \
                         or not self.env.noise_option:
                     # Generate waypoint
-                    state = self.env.get_waypoint_state(waypoint)
-                    waypoint = self.make_waypoint(state)
+                    pass
+                state = self.env.get_box_state()
+                waypoint = self.make_waypoint(state)
                 log_waypoint = [waypoint[0], waypoint[1]]
 
                 if i_episode/self.num_episodes == .75:
@@ -154,10 +155,10 @@ class WP_Agent:
                 # # Set waypoint as agents goal in env
                 # self.env.set_new_goal(waypoint)
                 # TODO: env.get_agent_state()
-                state = self.env.get_waypoint_state(waypoint)
+                wp_state = self.env.get_waypoint_state(waypoint)
                 # Query AC_Agent model for motor action
-                state = np.expand_dims(state, axis=0)
-                action = self.ac_agent(state)
+                wp_state = np.expand_dims(wp_state, axis=0)
+                action = self.ac_agent(wp_state)
                 action = np.squeeze(action, axis=0)
 
                 # We make sure action is within bounds
@@ -165,9 +166,9 @@ class WP_Agent:
 
                 # TODO: this seems janky, but I don't see any problems just looking at it
                 # TODO: make planner reward function
-                agent_state, reward, done, info = self.env.step(legal_action)
+                next_state, reward, done, info = self.env.step(legal_action)
                 # Obtain waypoint generator's state
-                next_state = self.env.get_box_state()
+                # next_state = self.env.get_box_state()
                 done = int(done)
                 episodic_reward += reward
 
