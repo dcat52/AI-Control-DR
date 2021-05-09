@@ -135,6 +135,7 @@ class WP_Agent:
                         or not counter % self.count_epsilon == 0 \
                         or not self.env.noise_option:
                     # Generate waypoint
+                    state = self.env.get_waypoint_state(waypoint)
                     waypoint = self.make_waypoint(state)
                 log_waypoint = [waypoint[0], waypoint[1]]
 
