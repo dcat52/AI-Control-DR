@@ -97,9 +97,8 @@ class AC_Agent:
         self.buffer = Buffer(capacity=self.BUFFER_CAPACITY)
 
         self.steps_done = 0
-        self.num_episodes = 1000
-        self.count_max = 100
-        self.ep_epsilon = self.num_episodes
+        self.count_max = self.EPISODE_LENGTH
+        self.ep_epsilon = self.NUM_EPISODES
         self.count_epsilon = self.count_max
 
     def save_weights(self, directory: str, i: int):
@@ -128,19 +127,22 @@ class AC_Agent:
             done = False
 
             while not done:
-                # Epsilon flag: intermittent 'noise-only' episodes
-                if not i_episode % self.ep_epsilon == 0 \
-                        or not counter % self.count_epsilon == 0 \
-                        or not self.env.noise_option:
-                    # Select and perform an action
+                if self.no_noise_eps == False:
+                    # Epsilon flag: intermittent 'noise-only' episodes
+                    if not i_episode % self.ep_epsilon == 0 \
+                            or not counter % self.count_epsilon == 0 \
+                            or not self.env.noise_option:
+                        # Select and perform an action
+                        action = self.make_action(state)
+                else:
                     action = self.make_action(state)
                 log_action = [action[0], action[1]]
 
                 # TODO: find better way to turn off noise at end of training
-                if i_episode/self.num_episodes == .5:
+                if i_episode/self.NUM_EPISODES == .5:
                     print("75% through training, deactivating noise exploration.")
 
-                if self.env.noise_option or i_episode / self.num_episodes <= .5:
+                if self.env.noise_option or i_episode / self.NUM_EPISODES <= .5:
                     # noise = np.random.uniform(-0.5, 0.5, 2)
                     noise = [self.ou_noise_L(), self.ou_noise_R()]
                 else:
@@ -189,9 +191,11 @@ class AC_Agent:
                 # Perform one step of the optimization (on the target network)
                 self.learn()
 
-            # Update the target network
-            if counter % self.TARGET_UPDATE == 0:
-                self.update_targets()
+                # Update the target network
+                if self.TARGET_UPDATE == -1 and done == True:
+                    self.update_targets()
+                elif counter % self.TARGET_UPDATE == 0:
+                    self.update_targets()
 
             # Log average episode length in Tensorboard ('steps until goal reached')
             if self.TENSORBOARD >= 1:

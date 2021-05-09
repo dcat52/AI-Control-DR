@@ -16,6 +16,7 @@ def parse():
     parser.add_argument('-r', '--render',         action='store_true',    help='Whether to render')
     parser.add_argument('--carrot',               action='store_true',    help='Whether to use carrot reward')
     parser.add_argument('--box',               action='store_true',    help='Whether to use box mode')
+    parser.add_argument('--no_noise_eps',      action='store_true',    help='Whether to disable noise only episodes')
 
     # model settings
     parser.add_argument('--print_freq',      dest="PRINT_FREQ",      default=1, type=int,        help='How often to print information to std out')
@@ -24,7 +25,7 @@ def parse():
     parser.add_argument('--batch_size',      dest="BATCH_SIZE",      default=2000, type=int,       help='Batch size')
     parser.add_argument('--buffer_capacity', dest="BUFFER_CAPACITY", default=40000, type=int,    help='Buffer capacity')
     parser.add_argument('--episodes', '--ep',dest="NUM_EPISODES",    default=1000, type=int,     help='Number of episodes to run')
-    parser.add_argument('--update_freq',     dest="TARGET_UPDATE",   default=1, type=int,        help='Update target network every n iterations')
+    parser.add_argument('--update_freq',     dest="TARGET_UPDATE",   default=-1, type=int,        help='Update target network every n iterations')
     parser.add_argument('--tau',             dest="TAU",             default=0.05, type=float,   help='Update ratio of target network')
     parser.add_argument('--gamma',           dest="GAMMA",           default=0.99, type=float,   help='Future reward decay')
     parser.add_argument('--std',             dest="STD_DEV",         default=0.1, type=float,   help='Standard deviation of noise')
@@ -37,6 +38,7 @@ def parse():
     parser.add_argument('--date',            dest="DATE_IN_PREFIX",  action='store_true',        help='Use the date in the prefix string (appended as _20210314_180101)')
     parser.add_argument('--load_prefix',     dest="LOAD_PREFIX",     default="data", type=str,   help='Location to load model weights from')
     parser.add_argument('--seed',            dest="SEED",            default=-1, type=int,       help='Set the default seed value, -1 is random seed.')
+    parser.add_argument('--episode_length',  dest="EPISODE_LENGTH",  default=100, type=int,       help='Set default episode length.')
 
     parser.add_argument('--actor_layer_width',  dest="ACTOR_LAYER_WIDTH",  default=256,  type=int, help='Actor - Width of layer')
     parser.add_argument('--actor_num_layers',   dest="ACTOR_NUM_LAYERS",   default=2,    type=int, help='Actor - Number layers deep')
@@ -50,9 +52,9 @@ def parse():
     # additional settings
     parser.add_argument('-l', '--log_level',    default=3, type=int,    help='Set logging level: 0=Critical, 1=Error, 2=Warning, 3=Info, 4=Debug')
     parser.add_argument('-g', '--gpu_mem_config', action='store_true',    help='Changes CUDA GPU memory allocation method')
+    parser.add_argument('-c', '--use_cpu', action='store_true',    help='Set tensorflow to force use CPU')
 
     args = parser.parse_args()
-
     args.start_loc = tuple(args.start_loc)
     args.goal_loc = tuple(args.goal_loc)
     args.SAVE_PREFIX = "'{}'".format(args.SAVE_PREFIX)
@@ -75,6 +77,10 @@ def run(args: argparse.Namespace):
         except:
             # Invalid device or cannot modify virtual devices once initialized.
             pass
+
+    if args.use_cpu:
+        import os
+        os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
     if args.SEED != -1:
         tensorflow.random.set_seed(args.SEED)
