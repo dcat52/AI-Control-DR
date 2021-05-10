@@ -36,7 +36,7 @@ def parse():
     parser.add_argument('--plot',            dest="PLOT",            action='store_true',        help='Whether to plot data')
     parser.add_argument('--tensorboard',     dest="TENSORBOARD",     default=1, type=int,        help='Whether to use tensorboard')
     parser.add_argument('--date',            dest="DATE_IN_PREFIX",  action='store_true',        help='Use the date in the prefix string (appended as _20210314_180101)')
-    parser.add_argument('--load_prefix',     dest="LOAD_PREFIX",     default="data", type=str,   help='Location to load model weights from')
+    parser.add_argument('--load_prefix',     dest="LOAD_PREFIX",     default="data_weights/kg_actor", type=str,   help='Location to load model weights from')
     parser.add_argument('--seed',            dest="SEED",            default=-1, type=int,       help='Set the default seed value, -1 is random seed.')
     parser.add_argument('--episode_length',  dest="EPISODE_LENGTH",  default=100, type=int,       help='Set default episode length.')
 
@@ -99,8 +99,6 @@ def run(args: argparse.Namespace):
     if args.test_dqn:
         env = Environment(robot_start=args.start_loc, goal=args.goal_loc, goal_threshold=args.goal_thresh,
                           render=args.render, box_mode=args.box)
-        actor = args.LOAD_PREFIX
-        critic = args.LOAD_PREFIX
         agent = AC2.AC_Agent(env, args)
         agent.test()
 
