@@ -105,7 +105,10 @@ class Environment:
         if self.box_mode:
             state_prime = self.get_box_state()
         agent_pos = self.agent.get_pos()
-        reward = self.reward_model.calculate_reward(agent_pos)
+        if self.box_mode:
+            reward = self.reward_model.calculate_reward(self.box.get_pos())
+        else:
+            reward = self.reward_model.calculate_reward(agent_pos)
 
         done = False
 
@@ -236,7 +239,7 @@ class Environment:
         :return: None
         """
         pygame.draw.circle(self.screen, (0, 150, 0), self.goal, 10)
-        pygame.draw.circle(self.screen, (0, 150, 150), self.waypoint, 10)
+        pygame.draw.circle(self.screen, (0, 150, 150), self.waypoint, 20)
         self.space.debug_draw(self.draw_options)
 
     # def _create_box(self):
