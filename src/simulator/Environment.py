@@ -131,7 +131,9 @@ class Environment:
         self.reward_model.set_new_goal(goal)
 
     def set_new_random_goal(self) -> None:
-        goal = np.random.randint(110, 490, (2))
+        # TODO: unbreak this function when the agent is smarter
+        goal = self.goal
+        # goal = np.random.randint(110, 490, (2))
         self.goal = goal
         self.reward_model.set_new_goal(goal)
 

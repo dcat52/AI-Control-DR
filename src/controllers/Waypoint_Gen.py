@@ -98,9 +98,8 @@ class WP_Agent:
         self.buffer = Buffer(capacity=self.BUFFER_CAPACITY)
 
         self.steps_done = 0
-        self.num_episodes = 1000
-        self.count_max = 100
-        self.ep_epsilon = self.num_episodes
+        self.count_max = self.EPISODE_LENGTH
+        self.ep_epsilon = self.NUM_EPISODES
         self.count_epsilon = self.count_max
 
     def save_weights(self, directory: str, i: int):
@@ -128,7 +127,6 @@ class WP_Agent:
             counter = 0
             done = False
             waypoint = [0, 0]
-            wp_state = self.env.agent.body.position
 
             while not done:
                 # Epsilon flag: intermittent 'noise-only' episodes
@@ -141,10 +139,10 @@ class WP_Agent:
                 waypoint = self.make_waypoint(state)
                 log_waypoint = [waypoint[0], waypoint[1]]
 
-                if i_episode/self.num_episodes == .75:
+                if i_episode/self.NUM_EPISODES == .75:
                     print("75% through training, deactivating noise exploration.")
 
-                if self.env.noise_option or i_episode / self.num_episodes <= .75:
+                if self.env.noise_option or i_episode / self.NUM_EPISODES <= .75:
                     # noise = np.random.uniform(-0.5, 0.5, 2)
                     noise = [self.ou_noise_L(), self.ou_noise_R()]
                 else:
@@ -155,6 +153,7 @@ class WP_Agent:
 
                 # # Set waypoint as agents goal in env
                 # self.env.set_new_goal(waypoint)
+                self.env.update_waypoint_loc(waypoint)
                 # TODO: env.get_agent_state()
                 wp_state = self.env.get_waypoint_state(waypoint)
                 # Query AC_Agent model for motor action
