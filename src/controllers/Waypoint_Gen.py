@@ -138,6 +138,7 @@ class WP_Agent:
                     pass
                 state = self.env.get_box_state()
                 waypoint = self.make_waypoint(state)
+                waypoint = self.env.agent.mult_by_rotation_matrix(waypoint)
                 log_waypoint = [waypoint[0], waypoint[1]]
 
                 if i_episode/self.NUM_EPISODES == .75:

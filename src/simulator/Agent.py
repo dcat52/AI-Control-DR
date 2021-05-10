@@ -43,6 +43,12 @@ class Agent:
     def get_shape(self) -> object:
         return self.shape
 
+    def mult_by_rotation_matrix(self, vector) -> np.ndarray:
+        R_world_to_agent = self._get_rotation_matrix()
+        result = R_world_to_agent.dot(vector)
+
+        return result
+
     def _get_rotation_matrix(self) -> np.ndarray:
 
         # Setup Rotation matrix to transform from world to agent frame
