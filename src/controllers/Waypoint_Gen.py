@@ -128,6 +128,7 @@ class WP_Agent:
             counter = 0
             done = False
             waypoint = [0, 0]
+            wp_state = self.env.agent.body.position
 
             while not done:
                 # Epsilon flag: intermittent 'noise-only' episodes
@@ -149,8 +150,8 @@ class WP_Agent:
                 else:
                     noise = [0, 0]
 
-                waypoint[0] = waypoint[0] + noise[0]
-                waypoint[1] = waypoint[1] + noise[1]
+                waypoint[0] = waypoint[0] + noise[0] + self.env.agent.body.position[0]
+                waypoint[1] = waypoint[1] + noise[1] + self.env.agent.body.position[1]
 
                 # # Set waypoint as agents goal in env
                 # self.env.set_new_goal(waypoint)
