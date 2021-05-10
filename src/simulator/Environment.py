@@ -64,6 +64,7 @@ class Environment:
 
         self.reward_model = Reward(goal=goal, carrot_reward=carrot_reward)
         self.goal = goal
+        self.waypoint = (10, 10)
         self.goal_threshold = goal_threshold
 
         self.running = True
@@ -121,6 +122,9 @@ class Environment:
         # TODO:
         # (state, reward, done, None)
         return state_prime, reward, done, None
+
+    def update_waypoint_loc(self, waypoint_loc) -> None:
+        self.waypoint = waypoint_loc
 
     def set_new_goal(self, goal: Vec2d) -> None:
         self.goal = goal
@@ -230,6 +234,7 @@ class Environment:
         :return: None
         """
         pygame.draw.circle(self.screen, (0, 150, 0), self.goal, 10)
+        pygame.draw.circle(self.screen, (0, 150, 150), self.waypoint, 10)
         self.space.debug_draw(self.draw_options)
 
     # def _create_box(self):
