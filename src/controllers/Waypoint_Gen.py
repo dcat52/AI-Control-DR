@@ -45,6 +45,7 @@ class WP_Agent:
         self.ACTOR_NUM_LAYERS: int
         self.ACTOR_LAYER_WIDTH: int
         self.CRITIC_LAYER_WIDTH: int
+        self.WP_RANGE: float
         # --------------------------------------
 
         # self.START = 1.0
@@ -148,8 +149,8 @@ class WP_Agent:
                 else:
                     noise = [0, 0]
 
-                waypoint[0] = waypoint[0] + noise[0] + self.env.agent.body.position[0]
-                waypoint[1] = waypoint[1] + noise[1] + self.env.agent.body.position[1]
+                waypoint[0] = waypoint[0]*self.WP_RANGE + noise[0] + self.env.agent.body.position[0]
+                waypoint[1] = waypoint[1]*self.WP_RANGE + noise[1] + self.env.agent.body.position[1]
 
                 # # Set waypoint as agents goal in env
                 # self.env.set_new_goal(waypoint)
