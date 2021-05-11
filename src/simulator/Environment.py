@@ -14,7 +14,7 @@ class Environment:
     def __init__(self, robot_start: Vec2d = (0, 0), goal: Vec2d = (2, 2), goal_threshold: float = 10.0,
                  noise_option: bool = True, randomize_goal_option: bool = True, carrot_reward: bool = False,
                  render: bool = True, render_step: int = 5, init: bool = True, box_mode: bool = True,
-                 box_agent=False) -> None:
+                 box_agent=False, random_start=False) -> None:
         # Physics
         # Time step
         self.dt = 1.0 / 60.0
@@ -31,7 +31,13 @@ class Environment:
         self.action_freq = 3 # in Hz
 
         self.robot_start = robot_start
-        self.agent = Agent(self, start_pos=robot_start, box_agent=box_agent)
+
+        self.random_start = random_start
+
+        if self.random_start:
+            self.robot_start = self.set_new_random_start()
+
+        self.agent = Agent(self, start_pos=self.robot_start, box_agent=box_agent)
 
         self.render_env = render
         self.called_render = False
@@ -78,7 +84,7 @@ class Environment:
         self.__init__(robot_start=self.robot_start, goal=self.goal, goal_threshold=self.goal_threshold,
                       noise_option=self.noise_option, randomize_goal_option=self.randomize_goal_option,
                       carrot_reward=self.carrot_reward, render=self.render_env, render_step=self.render_step,
-                      init=False, box_mode=self.box_mode, box_agent=self.box_agent)
+                      init=False, box_mode=self.box_mode, box_agent=self.box_agent, random_start=self.random_start)
         return (self.get_agent_state())
 
     def step(self, action) -> None:
@@ -119,8 +125,7 @@ class Environment:
             dist = self._box_dist_to_goal()
         if dist <= self.goal_threshold:
             reward += self.reward_model.reward_goal
-            if self.randomize_goal_option:
-                self.set_new_random_goal()
+            self.set_new_random_goal()
             done = True
 
         # Collision event logging for wall contact
@@ -135,10 +140,18 @@ class Environment:
         self.goal = goal
         self.reward_model.set_new_goal(goal)
 
+    def set_new_random_start(self) -> None:
+        start = np.random.randint(100, 300, (2))
+        start = start[0], start[1]
+        self.robot_Start = start
+        return start
+        # self.reward_model.set_new_goal(goal)
+
     def set_new_random_goal(self) -> None:
         # TODO: unbreak this function when the agent is smarter
         goal = self.goal
-        # goal = np.random.randint(110, 490, (2))
+        if self.randomize_goal_option:
+            goal = np.random.randint(400, 490, (2))
         self.goal = goal
         self.reward_model.set_new_goal(goal)
 
@@ -225,6 +238,9 @@ class Environment:
             if event.type == pygame.KEYDOWN and event.key == pygame.K_r:
                 self.randomize_goal_option = not self.randomize_goal_option
                 print("Randomizing goal after attainment: " + str(self.randomize_goal_option))
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_s:
+                self.random_start = not self.random_start
+                print("Randomizing start loc: " + str(self.random_start))
 
     def set_not_running(self):
         self.running = False

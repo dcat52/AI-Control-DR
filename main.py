@@ -19,6 +19,8 @@ def parse():
     parser.add_argument('--no_noise_eps',      action='store_true',    help='Whether to disable noise only episodes')
     parser.add_argument('--load_prefix',       dest="LOAD_PREFIX",     default="data_weights/kg_actor", type=str,   help='Location to load model weights from')
     parser.add_argument('--agent_is_box',      action='store_true',    help='Whether to disable noise only episodes')
+    parser.add_argument('--no_random_goal',      action='store_false',    help='Whether to not move the goal on reaching')
+    parser.add_argument('--random_start',      action='store_true',    help='Whether to not move the goal on reaching')
 
     # model settings
     parser.add_argument('--print_freq',      dest="PRINT_FREQ",      default=1, type=int,         help='How often to print information to std out')
@@ -92,7 +94,9 @@ def run(args: argparse.Namespace):
 
     if args.train_dqn:
         env = Environment(robot_start=args.start_loc, goal=args.goal_loc, goal_threshold=args.goal_thresh,
-                          render=args.render, carrot_reward=args.carrot, box_mode=args.box, box_agent=args.agent_is_box)
+                          render=args.render, carrot_reward=args.carrot, box_mode=args.box,
+                          box_agent=args.agent_is_box, randomize_goal_option=args.no_random_goal,
+                          random_start=args.random_start)
         if not args.box:
             agent = AC2.AC_Agent(env, args)
         else:
@@ -101,7 +105,8 @@ def run(args: argparse.Namespace):
 
     if args.test_dqn:
         env = Environment(robot_start=args.start_loc, goal=args.goal_loc, goal_threshold=args.goal_thresh,
-                          render=args.render, box_mode=args.box, box_agent=args.agent_is_box)
+                          render=args.render, box_agent=args.agent_is_box, randomize_goal_option=args.no_random_goal,
+                          random_start=args.random_start)
         agent = AC2.AC_Agent(env, args)
         agent.test()
 

@@ -27,7 +27,7 @@ class Agent:
         self.shape = pymunk.Circle(self.body, self.radius)
 
         if box_agent:
-            self.body = pymunk.Body(self.mass, 5000)
+            self.body = pymunk.Body(self.mass, 8000)
             self.shape = pymunk.Poly(self.body, [(-20,-20), (-20,20), (20,20), (20,-20)], radius=0)
 
         self.body.position = self.start_pos

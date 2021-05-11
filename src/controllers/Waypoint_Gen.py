@@ -153,12 +153,22 @@ class WP_Agent:
                     noise = [self.ou_noise_L(), self.ou_noise_R()]
                 else:
                     noise = [0, 0]
+                # noise = [0, 0]
 
-                # waypoint2 = np.copy(waypoint)
+                if i_episode < 20:
+                    box_pos = np.array(self.env.box.get_pos())
+                    agent_pos = np.array(self.env.agent.get_pos())
+                    vec = box_pos - agent_pos
+                    # rotvec = self.env.agent.mult_by_rotation_matrix(vec)
+                    waypoint = [0, 0]
+                    waypoint[0], waypoint[1] = vec
 
-                if i_episode >= 20:
-                    waypoint[0] = (waypoint[0] + noise[0])*self.WP_RANGE + self.env.agent.body.position[0]
-                    waypoint[1] = (waypoint[1] + noise[1])*self.WP_RANGE + self.env.agent.body.position[1]
+                wp = [0, 0]
+                wp[0] = waypoint[0]
+                wp[1] = waypoint[1]
+
+                waypoint[0] = wp[0]*self.WP_RANGE + self.env.agent.body.position[0]
+                waypoint[1] = wp[1]*self.WP_RANGE + self.env.agent.body.position[1]
 
                 # # Set waypoint as agents goal in env
                 # self.env.set_new_goal(waypoint)
@@ -211,7 +221,7 @@ class WP_Agent:
                 rewardTensor = tf.convert_to_tensor([reward])
 
                 # Store the transition in memory
-                self.buffer.push(state, waypoint, next_state, rewardTensor)
+                self.buffer.push(state, wp, next_state, rewardTensor)
 
                 # Move to the next state
                 state = next_state
@@ -219,8 +229,8 @@ class WP_Agent:
                 # Perform one step of the optimization (on the target network)
                 self.learn()
 
-            # Update the target network
-            self.update_targets()
+                # Update the target network
+                self.update_targets()
 
             # Log average episode length in Tensorboard ('steps until goal reached')
             if self.TENSORBOARD >= 1:
