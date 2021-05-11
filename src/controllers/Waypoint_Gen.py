@@ -145,10 +145,10 @@ class WP_Agent:
                 # waypoint = self.env.agent.mult_by_rotation_matrix(waypoint)
                 log_waypoint = [waypoint[0], waypoint[1]]
 
-                if i_episode/self.NUM_EPISODES == .75:
-                    print("75% through training, deactivating noise exploration.")
+                if counter == 1 and i_episode/self.NUM_EPISODES == self.NOISE_CUTOFF:
+                    print(str(self.NOISE_CUTOFF*100) + "% through training, deactivating noise exploration.")
 
-                if self.env.noise_option or i_episode / self.NUM_EPISODES <= .75:
+                if self.env.noise_option or i_episode / self.NUM_EPISODES <= self.NOISE_CUTOFF:
                     # noise = np.random.uniform(-0.5, 0.5, 2)
                     noise = [self.ou_noise_L(), self.ou_noise_R()]
                 else:

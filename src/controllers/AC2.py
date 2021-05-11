@@ -139,10 +139,11 @@ class AC_Agent:
                 log_action = [action[0], action[1]]
 
                 # TODO: find better way to turn off noise at end of training
-                if i_episode/self.NUM_EPISODES == .5:
-                    print("75% through training, deactivating noise exploration.")
+                noise_cutoff = .75
+                if counter == 1 and i_episode/self.NUM_EPISODES == noise_cutoff:
+                    print(str(noise_cutoff*100) + "% through training, deactivating noise exploration.")
 
-                if self.env.noise_option or i_episode / self.NUM_EPISODES <= .5:
+                if self.env.noise_option or i_episode / self.NUM_EPISODES <= noise_cutoff:
                     # noise = np.random.uniform(-0.5, 0.5, 2)
                     noise = [self.ou_noise_L(), self.ou_noise_R()]
                 else:
