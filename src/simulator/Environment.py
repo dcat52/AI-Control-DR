@@ -56,8 +56,8 @@ class Environment:
         self._add_static_scenery()
         agent_body = self.agent.get_body()
         agent_shape = self.agent.get_shape()
+        self.space.add(agent_body, agent_shape)
         if self.box_mode:
-            self.space.add(agent_body, agent_shape)
             box_body = self.box.get_body()
             box_shape = self.box.get_shape()
             self.space.add(box_body, box_shape)

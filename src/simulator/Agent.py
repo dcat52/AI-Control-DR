@@ -1,5 +1,5 @@
 from queue import Queue
-from math import cos, sin
+from math import cos, radians, sin
 
 import numpy as np
 import pymunk
@@ -27,6 +27,8 @@ class Agent:
         self.body.position = self.start_pos
         self.shape = pymunk.Circle(self.body, self.radius)
         self.body._set_angle(random.randint(0,628)/100)
+        # TODO: UNBREAK THIS
+        self.body._set_angle(radians(random.randint(40,50)))
         self.shape.color = THECOLORS['red']
         self.shape.elasticity = .5
         self.shape.friction = 0.99
@@ -42,6 +44,15 @@ class Agent:
 
     def get_shape(self) -> object:
         return self.shape
+
+    def opp_mult_by_rotation_matrix(self, vector) -> np.ndarray:
+        # Setup Rotation matrix to transform from world to agent frame
+        agent_angle = self.get_angle()
+        a = -agent_angle
+        R_world_to_agent = np.array([[cos(a), sin(a)], [-sin(a), cos(a)]])
+        result = R_world_to_agent.dot(vector)
+
+        return result
 
     def mult_by_rotation_matrix(self, vector) -> np.ndarray:
         R_world_to_agent = self._get_rotation_matrix()

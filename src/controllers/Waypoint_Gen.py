@@ -138,7 +138,11 @@ class WP_Agent:
                     pass
                 state = self.env.get_box_state()
                 waypoint = self.make_waypoint(state)
-                waypoint = self.env.agent.mult_by_rotation_matrix(waypoint)
+
+                if i_episode < 20:
+                    waypoint = np.array(self.env.box.get_pos())
+
+                # waypoint = self.env.agent.mult_by_rotation_matrix(waypoint)
                 log_waypoint = [waypoint[0], waypoint[1]]
 
                 if i_episode/self.NUM_EPISODES == .75:
@@ -150,11 +154,17 @@ class WP_Agent:
                 else:
                     noise = [0, 0]
 
-                waypoint[0] = waypoint[0]*self.WP_RANGE + noise[0] + self.env.agent.body.position[0]
-                waypoint[1] = waypoint[1]*self.WP_RANGE + noise[1] + self.env.agent.body.position[1]
+                # waypoint2 = np.copy(waypoint)
+
+                if i_episode >= 20:
+                    waypoint[0] = waypoint[0]*self.WP_RANGE + noise[0] + self.env.agent.body.position[0]
+                    waypoint[1] = waypoint[1]*self.WP_RANGE + noise[1] + self.env.agent.body.position[1]
 
                 # # Set waypoint as agents goal in env
                 # self.env.set_new_goal(waypoint)
+                # waypoint2 = self.env.agent.opp_mult_by_rotation_matrix(waypoint2)
+                # waypoint2[0] = waypoint2[0]*self.WP_RANGE + noise[0] + self.env.agent.body.position[0]
+                # waypoint2[1] = waypoint2[1]*self.WP_RANGE + noise[1] + self.env.agent.body.position[1]
                 self.env.update_waypoint_loc(waypoint)
                 # TODO: env.get_agent_state()
                 wp_state = self.env.get_waypoint_state(waypoint)
@@ -181,7 +191,7 @@ class WP_Agent:
 
                     if self.TENSORBOARD >= 2:
                         log_state = np.array(state)
-                        log_waypoint = np.array(legal_action)
+                        log_waypoint = np.array(waypoint)
 
                     if self.TENSORBOARD >= 3:
                         policy_critic_estimate = self.policy_critic_net.predict([log_state, log_waypoint])
@@ -201,7 +211,7 @@ class WP_Agent:
                 rewardTensor = tf.convert_to_tensor([reward])
 
                 # Store the transition in memory
-                self.buffer.push(state, legal_action, next_state, rewardTensor)
+                self.buffer.push(state, waypoint, next_state, rewardTensor)
 
                 # Move to the next state
                 state = next_state
