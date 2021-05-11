@@ -18,6 +18,7 @@ def parse():
     parser.add_argument('--box',               action='store_true',    help='Whether to use box mode')
     parser.add_argument('--no_noise_eps',      action='store_true',    help='Whether to disable noise only episodes')
     parser.add_argument('--load_prefix',       dest="LOAD_PREFIX",     default="data_weights/kg_actor", type=str,   help='Location to load model weights from')
+    parser.add_argument('--agent_is_box',      action='store_true',    help='Whether to disable noise only episodes')
 
     # model settings
     parser.add_argument('--print_freq',      dest="PRINT_FREQ",      default=1, type=int,         help='How often to print information to std out')
@@ -91,7 +92,7 @@ def run(args: argparse.Namespace):
 
     if args.train_dqn:
         env = Environment(robot_start=args.start_loc, goal=args.goal_loc, goal_threshold=args.goal_thresh,
-                          render=args.render, carrot_reward=args.carrot, box_mode=args.box)
+                          render=args.render, carrot_reward=args.carrot, box_mode=args.box, box_agent=args.agent_is_box)
         if not args.box:
             agent = AC2.AC_Agent(env, args)
         else:
@@ -100,7 +101,7 @@ def run(args: argparse.Namespace):
 
     if args.test_dqn:
         env = Environment(robot_start=args.start_loc, goal=args.goal_loc, goal_threshold=args.goal_thresh,
-                          render=args.render, box_mode=args.box)
+                          render=args.render, box_mode=args.box, box_agent=args.agent_is_box)
         agent = AC2.AC_Agent(env, args)
         agent.test()
 

@@ -11,7 +11,7 @@ import random
 
 class Agent:
     def __init__(self, _env, mass: float = 10, radius: float = 20, pos_hist_len: int = 2,
-                 start_pos: Vec2d = (0, 0)) -> None:
+                 start_pos: Vec2d = (0, 0), box_agent: bool = False) -> None:
         self._env = _env
 
         self.start_pos = start_pos
@@ -24,8 +24,13 @@ class Agent:
         
         self.inertia = pymunk.moment_for_circle(self.mass, 0, self.radius, (0, 0))
         self.body = pymunk.Body(self.mass, self.inertia)
-        self.body.position = self.start_pos
         self.shape = pymunk.Circle(self.body, self.radius)
+
+        if box_agent:
+            self.body = pymunk.Body(self.mass, 5000)
+            self.shape = pymunk.Poly(self.body, [(-20,-20), (-20,20), (20,20), (20,-20)], radius=0)
+
+        self.body.position = self.start_pos
         self.body._set_angle(random.randint(0,628)/100)
         # TODO: UNBREAK THIS
         self.body._set_angle(radians(random.randint(40,50)))

@@ -13,7 +13,8 @@ class Environment:
     
     def __init__(self, robot_start: Vec2d = (0, 0), goal: Vec2d = (2, 2), goal_threshold: float = 10.0,
                  noise_option: bool = True, randomize_goal_option: bool = True, carrot_reward: bool = False,
-                 render: bool = True, render_step: int = 5, init: bool = True, box_mode: bool = True) -> None:
+                 render: bool = True, render_step: int = 5, init: bool = True, box_mode: bool = True,
+                 box_agent=False) -> None:
         # Physics
         # Time step
         self.dt = 1.0 / 60.0
@@ -30,7 +31,7 @@ class Environment:
         self.action_freq = 3 # in Hz
 
         self.robot_start = robot_start
-        self.agent = Agent(self, start_pos=robot_start)
+        self.agent = Agent(self, start_pos=robot_start, box_agent=box_agent)
 
         self.render_env = render
         self.called_render = False
@@ -40,6 +41,7 @@ class Environment:
         self.carrot_reward = carrot_reward
 
         self.box_mode = box_mode
+        self.box_agent = box_agent
 
         if self.box_mode:
             self.box = Box(self)
@@ -76,7 +78,7 @@ class Environment:
         self.__init__(robot_start=self.robot_start, goal=self.goal, goal_threshold=self.goal_threshold,
                       noise_option=self.noise_option, randomize_goal_option=self.randomize_goal_option,
                       carrot_reward=self.carrot_reward, render=self.render_env, render_step=self.render_step,
-                      init=False, box_mode=self.box_mode)
+                      init=False, box_mode=self.box_mode, box_agent=self.box_agent)
         return (self.get_agent_state())
 
     def step(self, action) -> None:
