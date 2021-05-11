@@ -106,7 +106,7 @@ class Environment:
             state_prime = self.get_box_state()
         agent_pos = self.agent.get_pos()
         if self.box_mode:
-            reward = self.reward_model.calculate_reward(self.box.get_pos())
+            reward = self.reward_model.calculate_box_reward(self.box.get_pos(), self.agent.get_pos())
         else:
             reward = self.reward_model.calculate_reward(agent_pos)
 
@@ -148,6 +148,11 @@ class Environment:
     def _box_dist_to_goal(self):
         pos = self.box.get_pos()
         dist = pos.get_distance(self.goal)
+        return dist
+
+    def box_dist_to_agent(self):
+        pos = self.box.get_pos()
+        dist = pos.get_distance(self.agent.get_pos())
         return dist
 
     def _env_info_from_agent(self, agent_body) -> None:
