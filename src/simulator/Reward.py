@@ -16,6 +16,11 @@ class Reward:
         self.goal = goal
 
     def calculate_reward(self, pos: Vec2d):
+        # add reward to bring agent onto correct side of box
+
+        # add reward to push box to goal
+
+        # old agent reward
         length = pos.get_distance(self.goal)
         if self.carrot_reward:
             reward = 100 / length

@@ -157,8 +157,8 @@ class WP_Agent:
                 # waypoint2 = np.copy(waypoint)
 
                 if i_episode >= 20:
-                    waypoint[0] = waypoint[0]*self.WP_RANGE + noise[0] + self.env.agent.body.position[0]
-                    waypoint[1] = waypoint[1]*self.WP_RANGE + noise[1] + self.env.agent.body.position[1]
+                    waypoint[0] = (waypoint[0] + noise[0])*self.WP_RANGE + self.env.agent.body.position[0]
+                    waypoint[1] = (waypoint[1] + noise[1])*self.WP_RANGE + self.env.agent.body.position[1]
 
                 # # Set waypoint as agents goal in env
                 # self.env.set_new_goal(waypoint)
