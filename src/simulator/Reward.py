@@ -22,7 +22,6 @@ class Reward:
         agent_dist = agent_loc.get_distance(box_loc)
         goal_reward = goal_dist / 100
         box_proximity_reward = agent_dist/500
-        print(box_proximity_reward)
         return - (goal_reward + box_proximity_reward)
 
     def calculate_reward(self, pos: Vec2d):
