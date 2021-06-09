@@ -52,7 +52,7 @@ def parse():
     # environment settings
     parser.add_argument('--start_loc',      default=[300, 300], nargs='+', type=int,    help='Start location in format --start_loc x y')
     parser.add_argument('--goal_loc',       default=[400, 400], nargs='+', type=int,    help='Goal location in format  --goal_loc x y')
-    parser.add_argument('--goal_thresh',    default=20,                    type=int,    help='Threshold range to be considered at the goal')
+    parser.add_argument('--goal_thresh',    default=10,                    type=int,    help='Threshold range to be considered at the goal')
 
     # additional settings
     parser.add_argument('-l', '--log_level',    default=3, type=int,    help='Set logging level: 0=Critical, 1=Error, 2=Warning, 3=Info, 4=Debug')

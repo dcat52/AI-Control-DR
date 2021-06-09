@@ -37,6 +37,7 @@ class Agent:
         self.shape.color = THECOLORS['red']
         self.shape.elasticity = .5
         self.shape.friction = 0.99
+        self.shape.collision_type = 2
 
         for i in range(pos_hist_len):
             self.pos_history.put(Vec2d(x=self.start_pos[0], y=self.start_pos[1]), block=False)

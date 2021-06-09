@@ -128,8 +128,16 @@ class Environment:
             self.set_new_random_goal()
             done = True
 
-        # Collision event logging for wall contact
-        # TODO:
+        # Collision handler for wall hits
+        def collision_reward(space, arbiter, data):
+            data['reward'] -= self.reward_model.reward_death
+            return True
+
+        wall_collide = self.space.add_collision_handler(1, 2)
+        wall_collide._data = {"reward": reward}
+        wall_collide.pre_solve = collision_reward
+        reward = wall_collide.data['reward']
+
         # (state, reward, done, None)
         return state_prime, reward, done, None
 
@@ -209,6 +217,7 @@ class Environment:
         for line in static_lines:
             line.elasticity = 0.7
             line.group = 1
+            line.collision_type = 1
 
         self.space.add(*static_lines)
 
