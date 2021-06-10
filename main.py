@@ -19,45 +19,48 @@ def parse():
     parser.add_argument('--no_noise_eps',      action='store_true',    help='Whether to disable noise only episodes')
     parser.add_argument('--load_prefix',       dest="LOAD_PREFIX",     default="data_weights/kg_actor", type=str,   help='Location to load model weights from')
     parser.add_argument('--agent_is_box',      action='store_true',    help='Whether to disable noise only episodes')
-    parser.add_argument('--no_random_goal',      action='store_false',    help='Whether to not move the goal on reaching')
+    parser.add_argument('--no_random_goal',    action='store_false',    help='Whether to not move the goal on reaching')
     parser.add_argument('--random_start',      action='store_true',    help='Whether to not move the goal on reaching')
 
     # model settings
-    parser.add_argument('--print_freq',      dest="PRINT_FREQ",      default=1, type=int,         help='How often to print information to std out')
-    parser.add_argument('--write_freq',      dest="WRITE_FREQ",      default=5, type=int,         help='How often to save information to disk')
-    parser.add_argument('--save_freq',       dest="SAVE_FREQ",       default=500, type=int,       help='Save model weights every n iterations')
-    parser.add_argument('--batch_size',      dest="BATCH_SIZE",      default=2000, type=int,      help='Batch size')
-    parser.add_argument('--buffer_capacity', dest="BUFFER_CAPACITY", default=40000, type=int,     help='Buffer capacity')
-    parser.add_argument('--episodes', '--ep',dest="NUM_EPISODES",    default=10000, type=int,     help='Number of episodes to run')
-    parser.add_argument('--update_freq',     dest="TARGET_UPDATE",   default=-1, type=int,        help='Update target network every n iterations')
-    parser.add_argument('--tau',             dest="TAU",             default=0.05, type=float,    help='Update ratio of target network')
-    parser.add_argument('--gamma',           dest="GAMMA",           default=0.99, type=float,    help='Future reward decay')
-    parser.add_argument('--std',             dest="STD_DEV",         default=0.1, type=float,     help='Standard deviation of noise')
-    parser.add_argument('--theta',           dest="THETA",           default=0.05, type=float,    help='Theta of noise')
-    parser.add_argument('--save_prefix',     dest="SAVE_PREFIX",     default="data", type=str,    help='Prefix of location to save content')
-    parser.add_argument('--actor_lr',        dest="ACTOR_LR",        default=0.0001, type=float,  help='Learning rate for the actor')
-    parser.add_argument('--critic_lr',       dest="CRITIC_LR",       default=0.0002, type=float,  help='Learning rate for the critic')
-    parser.add_argument('--plot',            dest="PLOT",            action='store_true',         help='Whether to plot data')
-    parser.add_argument('--tensorboard',     dest="TENSORBOARD",     default=1, type=int,         help='Whether to use tensorboard')
-    parser.add_argument('--date',            dest="DATE_IN_PREFIX",  action='store_true',         help='Use the date in the prefix string (appended as _20210314_180101)')
-    parser.add_argument('--seed',            dest="SEED",            default=-1, type=int,        help='Set the default seed value, -1 is random seed.')
-    parser.add_argument('--episode_length',  dest="EPISODE_LENGTH",  default=100, type=int,       help='Set default episode length.')
-    parser.add_argument('--noise_cutoff', '-nc', dest="NOISE_CUTOFF",  default=.75, type=int,       help='Set default episode length.')
-    parser.add_argument('--wp_range',        dest="WP_RANGE",        default=50, type=int,        help='Set default episode length.')
+    parser.add_argument('--print_freq',          dest="PRINT_FREQ",      default=1, type=int,         help='How often to print information to std out')
+    parser.add_argument('--write_freq',          dest="WRITE_FREQ",      default=5, type=int,         help='How often to save information to disk')
+    parser.add_argument('--save_freq',           dest="SAVE_FREQ",       default=500, type=int,       help='Save model weights every n iterations')
+    parser.add_argument('--batch_size',          dest="BATCH_SIZE",      default=2000, type=int,      help='Batch size')
+    parser.add_argument('--buffer_capacity',     dest="BUFFER_CAPACITY", default=40000, type=int,     help='Buffer capacity')
+    parser.add_argument('--episodes', '--ep',    dest="NUM_EPISODES",    default=10000, type=int,     help='Number of episodes to run')
+    parser.add_argument('--update_freq',         dest="TARGET_UPDATE",   default=-1, type=int,        help='Update target network every n iterations')
+    parser.add_argument('--tau',                 dest="TAU",             default=0.05, type=float,    help='Update ratio of target network')
+    parser.add_argument('--gamma',               dest="GAMMA",           default=0.99, type=float,    help='Future reward decay')
+    parser.add_argument('--std',                 dest="STD_DEV",         default=0.1, type=float,     help='Standard deviation of noise')
+    parser.add_argument('--theta',               dest="THETA",           default=0.05, type=float,    help='Theta of noise')
+    parser.add_argument('--save_prefix',         dest="SAVE_PREFIX",     default="data", type=str,    help='Prefix of location to save content')
+    parser.add_argument('--actor_lr',            dest="ACTOR_LR",        default=0.0001, type=float,  help='Learning rate for the actor')
+    parser.add_argument('--critic_lr',           dest="CRITIC_LR",       default=0.0002, type=float,  help='Learning rate for the critic')
+    parser.add_argument('--plot',                dest="PLOT",            action='store_true',         help='Whether to plot data')
+    parser.add_argument('--tensorboard',         dest="TENSORBOARD",     default=1, type=int,         help='Whether to use tensorboard')
+    parser.add_argument('--date',                dest="DATE_IN_PREFIX",  action='store_true',         help='Use the date in the prefix string (appended as _20210314_180101)')
+    parser.add_argument('--seed',                dest="SEED",            default=-1, type=int,        help='Set the default seed value, -1 is random seed.')
+    parser.add_argument('--episode_length',      dest="EPISODE_LENGTH",  default=100, type=int,       help='Set default episode length.')
+    parser.add_argument('--noise_cutoff', '-nc', dest="NOISE_CUTOFF",    default=.75, type=int,       help='Set default episode length.')
+    parser.add_argument('--wp_range',            dest="WP_RANGE",        default=50, type=int,        help='Set default episode length.')
 
     parser.add_argument('--actor_layer_width',  dest="ACTOR_LAYER_WIDTH",  default=256,  type=int, help='Actor - Width of layer')
     parser.add_argument('--actor_num_layers',   dest="ACTOR_NUM_LAYERS",   default=2,    type=int, help='Actor - Number layers deep')
     parser.add_argument('--critic_layer_width', dest="CRITIC_LAYER_WIDTH", default=256,  type=int, help='Critic - Width of layer')
 
     # environment settings
-    parser.add_argument('--start_loc',      default=[300, 300], nargs='+', type=int,    help='Start location in format --start_loc x y')
-    parser.add_argument('--goal_loc',       default=[400, 400], nargs='+', type=int,    help='Goal location in format  --goal_loc x y')
-    parser.add_argument('--goal_thresh',    default=10,                    type=int,    help='Threshold range to be considered at the goal')
+    parser.add_argument('--start_loc',               default=[300, 300], nargs='+', type=int,    help='Start location in format --start_loc x y')
+    parser.add_argument('--goal_loc',                default=[400, 400], nargs='+', type=int,    help='Goal location in format  --goal_loc x y')
+    parser.add_argument('--goal_thresh',             default=10,                    type=int,    help='Threshold range to be considered at the goal')
+    parser.add_argument('--workspace_width', '-ww',  default=500, type=int, help='Set size of robot workspace.')
+    parser.add_argument('--workspace_height', '-wh', default=500, type=int, help='Set size of robot workspace.')
+    parser.add_argument('--workspace_buffer',        default=20, type=int, help='Set buffer around wkspc in window.')
 
     # additional settings
-    parser.add_argument('-l', '--log_level',    default=3, type=int,    help='Set logging level: 0=Critical, 1=Error, 2=Warning, 3=Info, 4=Debug')
-    parser.add_argument('-g', '--gpu_mem_config', action='store_true',    help='Changes CUDA GPU memory allocation method')
-    parser.add_argument('-c', '--use_cpu', action='store_true',    help='Set tensorflow to force use CPU')
+    parser.add_argument('-l',  '--log_level',         default=0, type=int,    help='Set logging level: 0=Critical, 1=Error, 2=Warning, 3=Info, 4=Debug')
+    parser.add_argument('-gm', '--gpu_mem_config',    action='store_true',    help='Changes CUDA GPU memory allocation method')
+    parser.add_argument('-g',  '--use_gpu',           action='store_true',    help='Set tensorflow to use GPU')
 
     args = parser.parse_args()
     args.start_loc = tuple(args.start_loc)
@@ -83,7 +86,7 @@ def run(args: argparse.Namespace):
             # Invalid device or cannot modify virtual devices once initialized.
             pass
 
-    if args.use_cpu:
+    if not args.use_gpu:
         import os
         os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
@@ -96,7 +99,8 @@ def run(args: argparse.Namespace):
         env = Environment(robot_start=args.start_loc, goal=args.goal_loc, goal_threshold=args.goal_thresh,
                           render=args.render, carrot_reward=args.carrot, box_mode=args.box,
                           box_agent=args.agent_is_box, randomize_goal_option=args.no_random_goal,
-                          random_start=args.random_start)
+                          random_start=args.random_start, workspace_size=[args.workspace_width, args.workspace_height],
+                          workspace_buffer=args.workspace_buffer)
         if not args.box:
             agent = AC2.AC_Agent(env, args)
         else:

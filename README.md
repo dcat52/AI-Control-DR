@@ -70,8 +70,8 @@ This setup uses the negative sum of two distances: box-to-goal and box-to-agent.
       
 ####2. Future work:
   #####Incorporate information sources:
-   - Wall collisions
    - Simulated proximity sensors
+   - Detect spinning in place?
     
   #####Behaviors:
    - Penalty for wall hits
@@ -79,6 +79,10 @@ This setup uses the negative sum of two distances: box-to-goal and box-to-agent.
   #####Extensions
   - Robo tag
   - Maze solving
+  
+  #####This Document
+  - gifs of various emergent behaviors: turning, choosing forward/backward, noise tolerance
+  - gifs of problems: L-shaped paths, spinning, near-goal behavior
     
     
 ####3. References

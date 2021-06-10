@@ -32,8 +32,6 @@ class Agent:
 
         self.body.position = self.start_pos
         self.body._set_angle(random.randint(0,628)/100)
-        # TODO: UNBREAK THIS
-        self.body._set_angle(radians(random.randint(40,50)))
         self.shape.color = THECOLORS['red']
         self.shape.elasticity = .5
         self.shape.friction = 0.99

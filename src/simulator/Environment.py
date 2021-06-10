@@ -14,7 +14,14 @@ class Environment:
     def __init__(self, robot_start: Vec2d = (0, 0), goal: Vec2d = (2, 2), goal_threshold: float = 10.0,
                  noise_option: bool = True, randomize_goal_option: bool = True, carrot_reward: bool = False,
                  render: bool = True, render_step: int = 5, init: bool = True, box_mode: bool = True,
-                 box_agent=False, random_start=False) -> None:
+                 box_agent=False, random_start=False, workspace_size=[600, 600], workspace_buffer=10) -> None:
+
+        # Workspace variables
+        self.workspace_size = workspace_size
+        self.workspace_buffer = workspace_buffer
+        self.wspace = [workspace_buffer, workspace_buffer + workspace_size[0],
+                       workspace_buffer, workspace_buffer + workspace_size[1]]
+
         # Physics
         # Time step
         self.dt = 1.0 / 60.0
@@ -55,7 +62,8 @@ class Environment:
         if init:
             pygame.init()
             if render:
-                self.screen = pygame.display.set_mode((600, 600))
+                self.screen = pygame.display.set_mode((2*self.workspace_buffer+self.workspace_size[0],
+                                                       2*self.workspace_buffer+self.workspace_size[1]))
                 self.draw_options = pymunk.pygame_util.DrawOptions(self.screen)
                 self.space.debug_draw(self.draw_options)
             self.clock = pygame.time.Clock()
@@ -72,7 +80,7 @@ class Environment:
 
         self.reward_model = Reward(goal=goal, carrot_reward=carrot_reward)
         self.goal = goal
-        self.waypoint = (10, 10)
+        self.waypoint = (-100, -100)
         self.goal_threshold = goal_threshold
 
         self.running = True
@@ -84,7 +92,8 @@ class Environment:
         self.__init__(robot_start=self.robot_start, goal=self.goal, goal_threshold=self.goal_threshold,
                       noise_option=self.noise_option, randomize_goal_option=self.randomize_goal_option,
                       carrot_reward=self.carrot_reward, render=self.render_env, render_step=self.render_step,
-                      init=False, box_mode=self.box_mode, box_agent=self.box_agent, random_start=self.random_start)
+                      init=False, box_mode=self.box_mode, box_agent=self.box_agent, random_start=self.random_start,
+                      workspace_size=self.workspace_size, workspace_buffer=self.workspace_buffer)
         return (self.get_agent_state())
 
     def step(self, action) -> None:
@@ -149,18 +158,21 @@ class Environment:
         self.reward_model.set_new_goal(goal)
 
     def set_new_random_start(self) -> None:
-        start = np.random.randint(100, 300, (2))
+        start = np.random.randint(self.wspace[0], self.wspace[1], (2))
         start = start[0], start[1]
-        self.robot_Start = start
+        self.robot_start = start
         return start
         # self.reward_model.set_new_goal(goal)
 
     def set_new_random_goal(self) -> None:
-        # TODO: unbreak this function when the agent is smarter
-        goal = self.goal
+        goal = list(self.goal)
         if self.randomize_goal_option:
-            goal = np.random.randint(400, 490, (2))
-        self.goal = goal
+            goal_jump = [-self.goal_threshold*10, self.goal_threshold*10]
+            goal[0] += np.random.randint(goal_jump[0], goal_jump[1])
+            np.clip(goal[0], self.wspace[0]+50, self.wspace[1]-50)
+            goal[1] += np.random.randint(goal_jump[0], goal_jump[1])
+            np.clip(goal[0], self.wspace[2]+50, self.wspace[3]-50)
+        self.goal = tuple(goal)
         self.reward_model.set_new_goal(goal)
 
     def _agent_dist_to_goal(self):
@@ -208,11 +220,14 @@ class Environment:
 
     def _add_static_scenery(self) -> True:
         # walls
+        buf = self.workspace_buffer
+        w = self.workspace_size[0]
+        h = self.workspace_size[1]
         static_lines = [
-            pymunk.Segment(self.space.static_body, (100, 500), (100, 100), 1.0),
-            pymunk.Segment(self.space.static_body, (500, 500), (100, 500), 1.0),
-            pymunk.Segment(self.space.static_body, (500, 100), (500, 500), 1.0),
-            pymunk.Segment(self.space.static_body, (100, 100), (500, 100), 1.0)
+            pymunk.Segment(self.space.static_body, (buf, buf+h), (buf, buf), 1.0),
+            pymunk.Segment(self.space.static_body, (buf+w, buf+h), (buf, buf+h), 1.0),
+            pymunk.Segment(self.space.static_body, (buf+w, buf), (buf+w, buf+h), 1.0),
+            pymunk.Segment(self.space.static_body, (buf, buf), (buf+w, buf), 1.0)
         ]
         for line in static_lines:
             line.elasticity = 0.7
